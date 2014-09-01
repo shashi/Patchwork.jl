@@ -94,8 +94,8 @@ isequal(a::Leaf, b::Leaf) = false
 # Combining Elements
 
 (>>)(a::Union(Node, String), b::Union(Node, String)) = convert(NodeList, (convert(Node, b), convert(Node, a)))
-(>>)(a::NodeList, b) = cons(convert(Node, b), a)
-(>>)(a, b::NodeList) = # should probably not allow this
+(>>)(a::NodeList, b::Union(Node, String)) = cons(convert(Node, b), a)
+(>>)(a::Union(Node, String), b::NodeList) = # should probably not allow this
     reverse(cons(convert(Node, a), reverse(b)))
 (>>)(a::NodeList, b::NodeList) = reduce(cons, a, reverse(b))
 

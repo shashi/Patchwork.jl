@@ -50,7 +50,6 @@ using Patchwork
 
 export Attributes, document
 
-println(Patchwork.make_elems(Patchwork.html5))
 eval(Patchwork.make_elems(Patchwork.html5))
 
 document(h, b) = Patchwork.document(:HTML5, h, b)
