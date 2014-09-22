@@ -113,5 +113,6 @@ isequal(a::Leaf, b::Leaf) = false
 
 include("htmlvariants.jl")
 include("combinators.jl")
+include("diff.jl")
 
 end # module
