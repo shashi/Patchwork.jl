@@ -12,7 +12,7 @@ function make_elems{ns}(variant::HtmlVariant{ns})
                        content,
                        _key=_key)
 
-            $tag(content=EmptyNode(); _key::MaybeKey=nothing, kwargs...) =
+            $tag(content=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
                 Parent($(string(ns)),
                        $(string(tag)),
                        Base.map(Attr, kwargs),

@@ -51,15 +51,17 @@ diff(a::Elem, b::Elem) =
 
 function position_map(a)
     keys = Dict()
-    for (i, x) in enumerate(a)
+    i = 1
+    for x in a
         if isa(x, Elem) && a[i]._key != nothing
             keys[x._key] = i
         end
+        i += 1
     end
     keys
 end
 
-function reorder(a::NodeList, b::NodeList)
+function reorder(a::NodeVector, b::NodeVector)
 
     # First prepare to answer the question
     # Where is the element x in the list y?
@@ -124,7 +126,7 @@ function reorder(a::NodeList, b::NodeList)
     return shuffle, moves
 end
 
-function diff(a::NodeList, b::NodeList, patches=Patch[])
+function diff(a::NodeVector, b::NodeVector, patches=Patch[])
     shuffle, moves = reorder(a, b)
 
     len_a = length(a)

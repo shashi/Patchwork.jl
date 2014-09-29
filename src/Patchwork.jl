@@ -29,16 +29,17 @@ immutable Attr{ns, name}
 end
 
 # Abstract out the word "Persistent"
-typealias NodeList   AbstractList{Node}
+typealias NodeVector   PersistentVector{Node}
 typealias Attrs PersistentSet{Attr}
-typealias EmptyNode  EmptyList{Node}
 
 typealias MaybeKey Union(Nothing, Symbol)
 
-convert(::Type{NodeList}, x) =
-    PersistentList{Node}(x)
-convert(::Type{NodeList}, x::String) =
-    PersistentList{Node}([PCDATA(x)])
+const EmptyNode = NodeVector([])
+
+convert(::Type{NodeVector}, x) =
+    PersistentVector{Node}(x)
+convert(::Type{NodeVector}, x::String) =
+    PersistentVector{Node}([PCDATA(x)])
 convert(::Type{Attrs}, x) =
     Attrs(x)
 
@@ -49,7 +50,7 @@ abstract Elem{ns, name} <: Node
 immutable Parent{ns, name} <: Elem{ns, name}
     key::MaybeKey
     attributes::Attrs
-    children::NodeList
+    children::NodeVector
 end
 
 immutable Leaf{ns, name} <: Elem{ns, name}
@@ -65,10 +66,10 @@ Parent(ns, name, attrs, children, _key::MaybeKey=nothing) =
     Parent{is(ns, None) ? ns : symbol(ns) , symbol(name)}(
         _key, attrs, children)
 
-Parent(ns, name, children=EmptyNode(); _key::MaybeKey=nothing, kwargs...) =
+Parent(ns, name, children=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
     Parent(ns, name, Attr[map(Attr, kwargs)...], children, _key=_key)
 
-Parent(name, children=EmptyNode(); _key::MaybeKey=nothing, kwargs...) =
+Parent(name, children=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
     Parent(None, name, Attr[map(Attr, kwargs)...], children, _key=_key)
 
 Leaf(ns, name, attrs, _key::MaybeKey=nothing) =
@@ -99,12 +100,12 @@ isequal(a::Leaf, b::Leaf) = false
 
 # Combining elements 
 (>>)(a::Union(Node, String), b::Union(Node, String)) =
-    convert(NodeList, (convert(Node, b), convert(Node, a)))
-(>>)(a::NodeList, b::Union(Node, String)) =
-    cons(convert(Node, b), a)
-(>>)(a::Union(Node, String), b::NodeList) = # slow!
-    reverse(cons(convert(Node, a), reverse(b)))
-(>>)(a::NodeList, b::NodeList) = reduce(cons, a, reverse(b))
+    NodeVector([convert(Node, a), convert(Node, b)])
+(>>)(a::NodeVector, b::Union(Node, String)) =
+    push(a, b)
+(>>)(a::Union(Node, String), b::NodeVector) = # slow!
+    append(NodeVector([a]), b)
+(>>)(a::NodeVector, b::NodeVector) = append(a, b)
 
 (&){ns, name}(a::Parent{ns, name}, b::Union(Attr, Attrs)) =
     Parent{ns, name}(union(a.attributes, b), a.children)
