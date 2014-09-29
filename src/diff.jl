@@ -5,28 +5,82 @@ type Replace <: Patch
     a
     b
 end
+
+function writestring(io::IO, p::Replace)
+    write(io, "- ")
+    writehtml(io, p.a)
+    write("\n+ ")
+    writehtml(io, p.b)
+end
+
 type ElemDiff <: Patch
     a
     attributes
     children
 end
+
+function writestring(io::IO, p::ElemDiff)
+    write(io, "~ ", tohtml(p.a))
+    writestring(io, p.attributes)
+    writestring(io, p.children)
+end
+
 type AttrDiff <: Patch
     a
     added
     deleted
 end
 
+function writestring(io::IO, p::AttrDiff)
+    write(io, "\n- ")
+    map(a -> writehtml(io, a), p.deleted)
+    write(io, "\n+ ")
+    map(a -> writehtml(io, a), p.added)
+end
+
 type Insert <: Patch
     b
+end
+
+function writestring(io::IO, p::Insert)
+    write(io, "I ")
+    writehtml(io, p.b)
+end
+
+type Delete <: Patch
+    a
+end
+
+function writestring(io::IO, p::Delete)
+    write(io, "D ")
+    writehtml(io, p.a)
 end
 
 type Reorder <: Patch
     a
     moves
 end
+writestring(io::IO, p::Reorder) =
+    write(io, "| ", tohtml(p.a), moves)
+
+function writestring(io::IO, ps::AbstractArray{Patch})
+    for p in ps
+        writestring(io, p)
+    end
+end
+
+function writestring(io::IO, x)
+    write(io, "Unknown: ", string(x))
+end
+
+function tostring(p::Patch)
+    io = IOBuffer()
+    writestring(io, p)
+    takebuf_string(io)
+end
 
 function diff(a::Union(PCDATA, CDATA), b::Union(PCDATA, CDATA))
-    if a !== b && a != b
+    if a !== b || a != b
         return Replace(a, b)
     end
 end
@@ -146,7 +200,7 @@ function diff(a::NodeVector, b::NodeVector, patches=Patch[])
         elseif right == nothing
             if left != nothing
                 # node removed
-                push!(patches, Remove(right))
+                push!(patches, Delete(right))
             end
         else
             d = diff(left, right)

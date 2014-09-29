@@ -5,8 +5,8 @@ using FunctionalCollections
 import Base: convert, promote_rule, isequal, ==, >>, &
 import FunctionalCollections.AbstractList
 
-export Attr, Node, Elem, CDATA, PCDATA, NodeList, Attrs,
-       EmptyNode, MaybeKey, attr, Parent, Leaf
+export Attr, Node, Elem, CDATA, PCDATA, NodeVector, Attrs,
+       EmptyNode, MaybeKey, attr, Parent, Leaf, tohtml
 
 # A Patchwork node
 abstract Node
@@ -114,6 +114,7 @@ isequal(a::Leaf, b::Leaf) = false
 
 include("htmlvariants.jl")
 include("combinators.jl")
+include("writers.jl")
 include("diff.jl")
 
 end # module
