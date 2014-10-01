@@ -1,9 +1,78 @@
 export diff
 
+using Debug
+
 abstract Patch
 type Replace <: Patch
     a
     b
+end
+
+type VectorDiff <: Patch
+    moves
+    inserts
+    deletes
+end
+VectorDiff() = VectorDiff(Dict(), Dict(), Dict())
+
+function writestring(io::IO, d::VectorDiff)
+    for (x, y) in d.moves
+        write(io, string(x), " |> ", y[1], " # ", y[2], "\n")
+    end
+    for (i, x) in [d.inserts]
+        write(io, string(i), " +> ")
+        writestring(io, x)
+        write(io, "\n")
+    end
+    for (i, x) in [d.deletes]
+        write(io, string(i), " -> ")
+        writestring(io, x)
+        write(io, "\n")
+    end
+end
+
+function key_idxs(ns)
+    i = 1
+    idxs = Dict()
+    for x in ns
+        if key(x) != nothing
+            idxs[key(x)] = i
+        end
+        i += 1
+    end
+    idxs
+end
+
+function diff(a::NodeVector, b::NodeVector)
+    if a === b return nothing end
+
+    if length(a) == 1 && length(b) == 1
+        return diff(a[1], b[1])
+    end
+
+    n = max(length(a), length(b))
+    a_key_idxs = key_idxs(a)
+    b_key_idxs = key_idxs(b)
+
+    patch = VectorDiff()
+    for i = 1:length(a)
+        moved_to = get(b_key_idxs, key(a[i]), 0)
+        if moved_to == 0
+            patch.deletes[i] = Delete(a[i])
+        else
+            d = diff(a[i], b[moved_to])
+            if i == moved_to && d == nothing continue end
+            patch.moves[i] = (moved_to, d)
+        end
+    end
+
+    for i = 1:length(b)
+        moved_from = get(a_key_idxs, key(b[i]), 0)
+        if moved_from == 0
+            patch.inserts[i] = Insert(b[i])
+        end
+    end
+    patch
 end
 
 function writestring(io::IO, p::Replace)
@@ -26,7 +95,6 @@ function writestring(io::IO, p::ElemDiff)
 end
 
 type AttrDiff <: Patch
-    a
     added
     deleted
 end
@@ -56,13 +124,6 @@ function writestring(io::IO, p::Delete)
     writehtml(io, p.a)
 end
 
-type Reorder <: Patch
-    a
-    moves
-end
-writestring(io::IO, p::Reorder) =
-    write(io, "| ", tohtml(p.a), moves)
-
 function writestring(io::IO, ps::AbstractArray{Patch})
     for p in ps
         writestring(io, p)
@@ -70,7 +131,7 @@ function writestring(io::IO, ps::AbstractArray{Patch})
 end
 
 function writestring(io::IO, x)
-    write(io, "Unknown: ", string(x))
+    write(io, string(x))
 end
 
 function tostring(p::Patch)
@@ -80,13 +141,16 @@ function tostring(p::Patch)
 end
 
 function diff(a::Union(PCDATA, CDATA), b::Union(PCDATA, CDATA))
-    if a !== b || a != b
-        return Replace(a, b)
+    if a === b || a.value == b.value
+        return nothing
     end
+    return Replace(a, b)
 end
 
 function diff{ns, tag}(a::Parent{ns, tag}, b::Parent{ns, tag})
-    attributes = diff(a, a.attributes, b.attributes)
+    if a === b return nothing end
+
+    attributes = diff(a.attributes, b.attributes)
     children   = diff(a.children, b.children)
     if !is(attributes, nothing) || !is(children, nothing)
         return ElemDiff(a, attributes, children)
@@ -94,6 +158,8 @@ function diff{ns, tag}(a::Parent{ns, tag}, b::Parent{ns, tag})
 end
 
 function diff{ns, tag}(a::Leaf{ns, tag}, b::Leaf{ns, tag})
+    if a === b return nothing end
+
     attributes = diff(a.attributes, b.attributes)
     if !is(attributes, nothing)
         return ElemDiff(a, attributes, nothing)
@@ -103,122 +169,12 @@ end
 diff(a::Elem, b::Elem) =
     Replace(a, b)
 
-function position_map(a)
-    keys = Dict()
-    i = 1
-    for x in a
-        if isa(x, Elem) && a[i]._key != nothing
-            keys[x._key] = i
-        end
-        i += 1
-    end
-    keys
-end
+function diff(a::Attrs, b::Attrs)
+    if a === b return nothing end
 
-function reorder(a::NodeVector, b::NodeVector)
-
-    # First prepare to answer the question
-    # Where is the element x in the list y?
-    a_idxs = position_map(a)
-    b_idxs = position_map(b)
-
-    # Create maps from
-    # ListA position -> ListB position &
-    # ListB position -> ListA position
-    wentfrom_a = Dict()
-    wentfrom_b = Dict()
-
-    for (x, i) in b_idxs
-        wentfrom_b[i] = a_idxs[x]
-    end
-    for (x, i) in a_idxs
-        wentfrom_a[i] = b_idxs[x]
-    end
-
-    n = max(length(a), length(b))
-
-    move_idx = 1
-    moves = Dict()
-    reverse = Dict()
-    shuffle = Union(Node, Nothing)[]        # holds the reordered list
-    free_idx = 1
-
-    i = 1 # loop counter
-    while free_idx < n
-        move = get(wentfrom_a, i, 0)
-
-        # note: push!(shuffle, x) === shuffle[i] = x
-        if move != 0                # i.e. a[i] is present in b
-            push!(shuffle, b[move]) # place it where it will be compared
-            if (move != move_idx)   
-                moves[move] = move_idx
-                reverse[move_idx] = move
-            end
-            move_idx += 1
-        elseif (i in wentfrom_a) # a[i] is not in b
-            push!(shuffle, nothing)
-            removes[i] = move_idx
-            move_idx += 1
-        else
-            while get(wentfrom_b, free_idx, 0) != 0
-                free_idx += 1
-            end
-            if free_idx < n
-                if length(b) <= free_idx
-                    shuffle[i] = b[free_idx] # OKAY.........
-                    if free_idx != move_idx
-                        moves[free_idx] = move_idx
-                        reverse[move_idx] = free_idx
-                    end
-                    move_idx += 1
-                end
-                free_idx += 1
-            end
-        end
-        i += 1
-    end
-    return shuffle, moves
-end
-
-function diff(a::NodeVector, b::NodeVector, patches=Patch[])
-    shuffle, moves = reorder(a, b)
-
-    len_a = length(a)
-    len_b = length(b)
-
-    len = max(len_a, len_b)
-
-    for i=1:len
-        left = try a[i] catch nothing end
-        right = get(shuffle, i, nothing)
-
-        if left == nothing
-            if right != nothing
-                # Node inserted
-                push!(patches, Insert(right))
-            end
-        elseif right == nothing
-            if left != nothing
-                # node removed
-                push!(patches, Delete(right))
-            end
-        else
-            d = diff(left, right)
-            if d != nothing
-                push!(patches, d)
-            end
-        end
-    end
-    if !isempty(moves)
-        push!(patches, Reorder(a, moves))
-    end
-    patches
-end
-
-function diff(el::Elem, a::Attrs, b::Attrs)
     added = setdiff(b, a)
     deleted = setdiff(a, b)
     if length(added) != 0 || length(deleted) != 0
-        return AttrDiff(el, added, deleted)
+        return AttrDiff( added, deleted)
     end
 end

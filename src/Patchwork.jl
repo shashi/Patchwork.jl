@@ -125,7 +125,7 @@ isequal(a::Leaf, b::Leaf) = false
     a === b || a.attributes == b.attributes
 ==(a::Leaf, b::Leaf) = false
 
-# Combining elements 
+# Combining elements
 (>>)(a::Union(Node, String), b::Union(Node, String)) =
     NodeVector([convert(Node, a), convert(Node, b)])
 (>>)(a::NodeVector, b::Union(Node, String)) =
