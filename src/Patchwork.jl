@@ -2,23 +2,48 @@ module Patchwork
 
 using FunctionalCollections
 
-import Base: convert, promote_rule, isequal, ==, >>, &
-import FunctionalCollections.AbstractList
+import Base:
+       convert,
+       promote_rule,
+       isequal,
+       ==,
+       >>,
+       &,
+       writemime
 
-export Attr, Node, Elem, CDATA, PCDATA, NodeVector, Attrs,
-       EmptyNode, MaybeKey, attr, Parent, Leaf, tohtml
+export Attr,
+       Node,
+       Elem,
+       PCDATA,
+       pcdata,
+       NodeVector,
+       Attrs,
+       attrs,
+       EmptyNode,
+       MaybeKey,
+       Parent,
+       Leaf,
+       tohtml,
+       writemime
+
+typealias MaybeKey Union(Nothing, Symbol)
 
 # A Patchwork node
 abstract Node
 
+key(n::Node) = n.key
+
 immutable CDATA <: Node
+    key::MaybeKey
     value::ByteString
 end
 
 immutable PCDATA <: Node
+    key::MaybeKey
     value::ByteString
 end
-pcdata(xs...) = PCDATA(string(xs...))
+pcdata(xs...; _key::MaybeKey=nothing) =
+    PCDATA(_key, string(xs...))
 
 convert(::Type{Node}, s::String) = pcdata(s)
 promote_rule(::Type{Node}, ::Type{String}) = Node
@@ -32,14 +57,14 @@ end
 typealias NodeVector   PersistentVector{Node}
 typealias Attrs PersistentSet{Attr}
 
-typealias MaybeKey Union(Nothing, Symbol)
-
 const EmptyNode = NodeVector([])
 
 convert(::Type{NodeVector}, x) =
     PersistentVector{Node}(x)
+convert(::Type{NodeVector}, x::NodeVector) =
+    x
 convert(::Type{NodeVector}, x::String) =
-    PersistentVector{Node}([PCDATA(x)])
+    PersistentVector{Node}([pcdata(x)])
 convert(::Type{Attrs}, x) =
     Attrs(x)
 
@@ -86,6 +111,8 @@ isequal{ns,name}(a::Parent{ns,name}, b::Parent{ns,name}) =
     a === b || (isequal(a.attributes, b.attributes) &&
                 sequal(a.children, b.children))
 isequal(a::Parent, b::Parent) = false
+
+==(a::PCDATA, b::PCDATA) = a.value == b.value
 =={ns, name}(a::Parent{ns, name}, b::Parent{ns,name}) =
     a === b || (a.attributes == b.attributes &&
                 a.children == b.children)
@@ -107,10 +134,12 @@ isequal(a::Leaf, b::Leaf) = false
     append(NodeVector([a]), b)
 (>>)(a::NodeVector, b::NodeVector) = append(a, b)
 
+# Manipulating attributes
+attrs(; kwargs...) = Attrs(map(Attr, kwargs))
 (&){ns, name}(a::Parent{ns, name}, b::Union(Attr, Attrs)) =
-    Parent{ns, name}(union(a.attributes, b), a.children)
+    Parent{ns, name}(key(a), union(a.attributes, b), a.children)
 (&){ns, name}(a::Leaf{ns, name}, b::Union(Attr, Attrs)) =
-    Leaf{ns, name}(union(a.attributes, b))
+    Leaf{ns, name}(key(a), union(a.attributes, b))
 
 include("htmlvariants.jl")
 include("combinators.jl")
