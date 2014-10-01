@@ -15,22 +15,6 @@ type VectorDiff <: Patch
 end
 VectorDiff() = VectorDiff(Dict(), Dict(), Dict())
 
-function writestring(io::IO, d::VectorDiff)
-    for (x, y) in d.moves
-        write(io, string(x), " |> ", y[1], " # ", y[2], "\n")
-    end
-    for (i, x) in [d.inserts]
-        write(io, string(i), " +> ")
-        writestring(io, x)
-        write(io, "\n")
-    end
-    for (i, x) in [d.deletes]
-        write(io, string(i), " -> ")
-        writestring(io, x)
-        write(io, "\n")
-    end
-end
-
 function key_idxs(ns)
     i = 1
     idxs = Dict()
@@ -75,23 +59,10 @@ function diff(a::NodeVector, b::NodeVector)
     patch
 end
 
-function writestring(io::IO, p::Replace)
-    write(io, "- ")
-    writehtml(io, p.a)
-    write("\n+ ")
-    writehtml(io, p.b)
-end
-
 type ElemDiff <: Patch
     a
     attributes
     children
-end
-
-function writestring(io::IO, p::ElemDiff)
-    write(io, "~ ", tohtml(p.a))
-    writestring(io, p.attributes)
-    writestring(io, p.children)
 end
 
 type AttrDiff <: Patch
@@ -99,45 +70,12 @@ type AttrDiff <: Patch
     deleted
 end
 
-function writestring(io::IO, p::AttrDiff)
-    write(io, "\n- ")
-    map(a -> writehtml(io, a), p.deleted)
-    write(io, "\n+ ")
-    map(a -> writehtml(io, a), p.added)
-end
-
 type Insert <: Patch
     b
 end
 
-function writestring(io::IO, p::Insert)
-    write(io, "I ")
-    writehtml(io, p.b)
-end
-
 type Delete <: Patch
     a
-end
-
-function writestring(io::IO, p::Delete)
-    write(io, "D ")
-    writehtml(io, p.a)
-end
-
-function writestring(io::IO, ps::AbstractArray{Patch})
-    for p in ps
-        writestring(io, p)
-    end
-end
-
-function writestring(io::IO, x)
-    write(io, string(x))
-end
-
-function tostring(p::Patch)
-    io = IOBuffer()
-    writestring(io, p)
-    takebuf_string(io)
 end
 
 function diff(a::Union(PCDATA, CDATA), b::Union(PCDATA, CDATA))
@@ -178,3 +116,67 @@ function diff(a::Attrs, b::Attrs)
         return AttrDiff( added, deleted)
     end
 end
+
+# Pretty printing diffs
+function writestring(io::IO, d::VectorDiff)
+    for (x, y) in d.moves
+        write(io, string(x), " |> ", y[1], " # ", y[2], "\n")
+    end
+    for (i, x) in [d.inserts]
+        write(io, string(i), " +> ")
+        writestring(io, x)
+        write(io, "\n")
+    end
+    for (i, x) in [d.deletes]
+        write(io, string(i), " -> ")
+        writestring(io, x)
+        write(io, "\n")
+    end
+end
+
+function writestring(io::IO, p::Replace)
+    write(io, "- ")
+    writehtml(io, p.a)
+    write("\n+ ")
+    writehtml(io, p.b)
+end
+
+function writestring(io::IO, p::ElemDiff)
+    write(io, "~ ", tohtml(p.a))
+    writestring(io, p.attributes)
+    writestring(io, p.children)
+end
+
+function writestring(io::IO, p::AttrDiff)
+    write(io, "\n- ")
+    map(a -> writehtml(io, a), p.deleted)
+    write(io, "\n+ ")
+    map(a -> writehtml(io, a), p.added)
+end
+
+function writestring(io::IO, p::Insert)
+    write(io, "I ")
+    writehtml(io, p.b)
+end
+
+function writestring(io::IO, p::Delete)
+    write(io, "D ")
+    writehtml(io, p.a)
+end
+
+function writestring(io::IO, ps::AbstractArray{Patch})
+    for p in ps
+        writestring(io, p)
+    end
+end
+
+function writestring(io::IO, x)
+    write(io, string(x))
+end
+
+function tostring(p::Patch)
+    io = IOBuffer()
+    writestring(io, p)
+    takebuf_string(io)
+end
+
