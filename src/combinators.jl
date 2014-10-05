@@ -1,5 +1,5 @@
 
-function make_elems{ns}(variant::HtmlVariant{ns})
+function make_elems{ns}(variant::DocVariant{ns})
     exports = Expr(:export, [variant.parents, variant.leafs]...)
     contents = :(begin end)
     push!(contents.args, exports)
@@ -38,7 +38,7 @@ function make_elems{ns}(variant::HtmlVariant{ns})
     contents
 end
 
-function make_attrs{ns}(variant::HtmlVariant{ns})
+function make_attrs{ns}(variant::DocVariant{ns})
     func_name(attr) = symbol(replace(string(attr), "-", "_"))
     exports = Expr(:export, Base.map(func_name, variant.attributes)...)
     contents = :(begin end)

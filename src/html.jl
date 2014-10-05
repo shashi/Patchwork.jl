@@ -1,14 +1,7 @@
 
 # This is taken from [Text.Blaze.HTML](https://github.com/jaspervdj/blaze-html/)
 
-immutable HtmlVariant{version}
-    doctype::String
-    parents::Vector{Symbol}
-    leafs::Vector{Symbol}
-    attributes::Vector{Symbol}
-end
-
-html5 = HtmlVariant{:HTML5}(
+html5 = DocVariant{:HTML5}(
         "<!DOCTYPE HTML>"
     ,
         [ :a, :abbr, :address, :article, :aside, :audio, :b

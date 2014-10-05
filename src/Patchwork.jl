@@ -83,6 +83,14 @@ immutable Leaf{ns, name} <: Elem{ns, name}
     attributes::Attrs
 end
 
+# A document type
+immutable DocVariant{ns}
+    prelude::String
+    parents::Vector{Symbol}
+    leafs::Vector{Symbol}
+    attributes::Vector{Symbol}
+end
+
 # constructors
 Attr(ns, name, val) = Attr{symbol(ns), symbol(name)}(val)
 Attr(x::(Any, Any)) = Attr{None, symbol(x[1])}(x[2])
@@ -141,7 +149,7 @@ attrs(; kwargs...) = Attrs(map(Attr, kwargs))
 (&){ns, name}(a::Leaf{ns, name}, b::Union(Attr, Attrs)) =
     Leaf{ns, name}(key(a), union(a.attributes, b))
 
-include("htmlvariants.jl")
+include("html.jl")
 include("combinators.jl")
 include("writers.jl")
 include("diff.jl")
