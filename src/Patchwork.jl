@@ -102,7 +102,7 @@ attrs(; kwargs...) = kwargs
 (&){ns, name}(a::Elem{ns, name}, itr) =
     Elem{ns, name}(key(a), merge(a.attributes, itr), a.children)
 
-include("html.jl")
+include("variants.jl")
 include("combinators.jl")
 include("writers.jl")
 include("diff.jl")

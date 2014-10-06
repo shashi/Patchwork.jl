@@ -1,4 +1,4 @@
-export HTML5
+export HTML5, SVG
 
 function make_elems{ns}(variant::DocVariant{ns})
     exports = Expr(:export, variant.elements...)
@@ -41,6 +41,6 @@ module SVG
 
 using Patchwork
 
-#eval(Patchwork.make_elems(Patchwork.svg))
+eval(Patchwork.make_elems(Patchwork.svg))
 
 end
