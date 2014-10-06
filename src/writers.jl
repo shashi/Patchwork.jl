@@ -12,33 +12,27 @@ function tohtml(t)
 end
 
 # Write HTML
-writehtml(io::IO, t::PCDATA) =
+writehtml(io::IO, t::Text) =
     write(io, t.value)
 
-writehtml{ns, name}(io::IO, a::Attr{ns, name}) =
-    write(io, " ", name, "=\"", string(a.value), "\"")
+function writehtml(io::IO, attr::(Any, Any))
+    k, v = attr
+    write(io, " ", k, "=\"", string(v), "\"")
+end
 
 #function writehtml(io::IO, doc::Document)
 #    write(io, doc.doctype, "\n")
 #    writehtml(io, elem(:html, ElemList(doc.head, doc.body)))
 #end
 
-function writehtml{ns, tag}(io::IO, el::Parent{ns, tag})
+function writehtml{ns, tag}(io::IO, el::Elem{ns, tag})
     write(io, "<", tag)
-    for a in el.attributes
-        writehtml(io, a)
+    for (k, v) in el.attributes
+        writehtml(io, (k, v))
     end
     write(io, ">")
     writehtml(io, el.children)
     write(io, "</", tag, ">")
-end
-
-function writehtml{ns, tag}(io::IO, el::Leaf{ns, tag})
-    write(io, "<", tag)
-    for a in el.attributes
-        writehtml(io, a)
-    end
-    write(io, "/>")
 end
 
 function writehtml(io::IO, el::NodeVector)

@@ -11,8 +11,7 @@ import Base:
        &,
        writemime
 
-export Attr,
-       Node,
+export Node,
        Elem,
        PCDATA,
        pcdata,
@@ -21,8 +20,6 @@ export Attr,
        attrs,
        EmptyNode,
        MaybeKey,
-       Parent,
-       Leaf,
        tohtml,
        writemime
 
@@ -48,14 +45,9 @@ pcdata(xs...; _key::MaybeKey=nothing) =
 convert(::Type{Node}, s::String) = pcdata(s)
 promote_rule(::Type{Node}, ::Type{String}) = Node
 
-# An attribute
-immutable Attr{ns, name}
-    value
-end
-
 # Abstract out the word "Persistent"
 typealias NodeVector   PersistentVector{Node}
-typealias Attrs PersistentSet{Attr}
+typealias Attrs PersistentHashMap
 
 const EmptyNode = NodeVector([])
 
@@ -68,70 +60,39 @@ convert(::Type{NodeVector}, x::String) =
 convert(::Type{Attrs}, x) =
     Attrs(x)
 
-# An XML/HTML element
-abstract Elem{ns, name} <: Node
-
-# HTML5 requires a distinction between parent and leaf nodes.
-immutable Parent{ns, name} <: Elem{ns, name}
+# A DOM Element
+immutable Elem{ns, tag} <: Node
     key::MaybeKey
     attributes::Attrs
     children::NodeVector
 end
 
-immutable Leaf{ns, name} <: Elem{ns, name}
-    key::MaybeKey
-    attributes::Attrs
-end
-
 # A document type
 immutable DocVariant{ns}
-    prelude::String
-    parents::Vector{Symbol}
-    leafs::Vector{Symbol}
-    attributes::Vector{Symbol}
+    elements::Vector{Symbol}
 end
 
 # constructors
-Attr(ns, name, val) = Attr{symbol(ns), symbol(name)}(val)
-Attr(x::(Any, Any)) = Attr{None, symbol(x[1])}(x[2])
-
-Parent(ns, name, attrs, children, _key::MaybeKey=nothing) =
-    Parent{is(ns, None) ? ns : symbol(ns) , symbol(name)}(
+Elem(ns, name, attrs, children, _key::MaybeKey=nothing) =
+    Elem{is(ns, None) ? ns : symbol(ns) , symbol(name)}(
         _key, attrs, children)
 
-Parent(ns, name, children=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
-    Parent(ns, name, Attr[map(Attr, kwargs)...], children, _key=_key)
+Elem(ns, name, children=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
+    Elem(ns, name, Attr[map(Attr, kwargs)...], children, _key=_key)
 
-Parent(name, children=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
-    Parent(None, name, Attr[map(Attr, kwargs)...], children, _key=_key)
+Elem(name, children=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
+    Elem(None, name, Attr[map(Attr, kwargs)...], children, _key=_key)
 
-Leaf(ns, name, attrs, _key::MaybeKey=nothing) =
-    Leaf{is(ns, None) ? ns : symbol(ns) , symbol(name)}(
-        _key, attrs)
-Leaf(ns, name; _key::MaybeKey=nothing, kwargs...) =
-    Leaf{symbol(ns), symbol(name)}(
-        Attr[map(Attr, kwargs)...], _key=_key)
-Leaf(name; _key::MaybeKey=nothing, kwargs...) =
-    Leaf{nothing, symbol(name)}(
-        Attr[map(Attr, kwargs)...], _key=nothing)
-
-isequal{ns,name}(a::Parent{ns,name}, b::Parent{ns,name}) =
+isequal{ns,name}(a::Elem{ns,name}, b::Elem{ns,name}) =
     a === b || (isequal(a.attributes, b.attributes) &&
                 sequal(a.children, b.children))
-isequal(a::Parent, b::Parent) = false
+isequal(a::Elem, b::Elem) = false
 
 ==(a::PCDATA, b::PCDATA) = a.value == b.value
 =={ns, name}(a::Parent{ns, name}, b::Parent{ns,name}) =
     a === b || (a.attributes == b.attributes &&
                 a.children == b.children)
-==(a::Parent, b::Parent) = false
-
-isequal{ns, name}(a::Leaf{ns, name}, b::Leaf{ns, name}) =
-    a === b || isequal(a.attributes, b.attributes)
-isequal(a::Leaf, b::Leaf) = false
-=={ns, name}(a::Leaf{ns, name}, b::Leaf{ns, name}) =
-    a === b || a.attributes == b.attributes
-==(a::Leaf, b::Leaf) = false
+==(a::Elem, b::Elem) = false
 
 # Combining elements
 (>>)(a::Union(Node, String), b::Union(Node, String)) =
@@ -143,11 +104,9 @@ isequal(a::Leaf, b::Leaf) = false
 (>>)(a::NodeVector, b::NodeVector) = append(a, b)
 
 # Manipulating attributes
-attrs(; kwargs...) = Attrs(map(Attr, kwargs))
-(&){ns, name}(a::Parent{ns, name}, b::Union(Attr, Attrs)) =
-    Parent{ns, name}(key(a), union(a.attributes, b), a.children)
-(&){ns, name}(a::Leaf{ns, name}, b::Union(Attr, Attrs)) =
-    Leaf{ns, name}(key(a), union(a.attributes, b))
+attrs(; kwargs...) = kwargs
+(&){ns, name}(a::Elem{ns, name}, itr) =
+    Elem{ns, name}(key(a), merge(a.attributes, itr), a.children)
 
 include("html.jl")
 include("combinators.jl")

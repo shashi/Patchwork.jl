@@ -67,6 +67,7 @@ end
 
 type AttrDiff <: Patch
     added
+    updated
     deleted
 end
 
@@ -78,14 +79,14 @@ type Delete <: Patch
     a
 end
 
-function diff(a::Union(PCDATA, CDATA), b::Union(PCDATA, CDATA))
+function diff(a::Text, b::Text)
     if a === b || a.value == b.value
         return nothing
     end
     return Replace(a, b)
 end
 
-function diff{ns, tag}(a::Parent{ns, tag}, b::Parent{ns, tag})
+function diff{ns, tag}(a::Elem{ns, tag}, b::Elem{ns, tag})
     if a === b return nothing end
 
     attributes = diff(a.attributes, b.attributes)
@@ -95,25 +96,33 @@ function diff{ns, tag}(a::Parent{ns, tag}, b::Parent{ns, tag})
     end
 end
 
-function diff{ns, tag}(a::Leaf{ns, tag}, b::Leaf{ns, tag})
+function diff(a::Associative, b::Associative)
     if a === b return nothing end
 
-    attributes = diff(a.attributes, b.attributes)
-    if !is(attributes, nothing)
-        return ElemDiff(a, attributes, nothing)
+    added = Any[]
+    updated = Any[]
+    deleted = Any[]
+    for (k, v) in a
+        if k in b
+            if is(v != b[k])
+                if isa(b[k], Associative)
+                    push!(updated, (k, diff(v, b[k])))
+                else
+                    push!(updated, (k, b[k]))
+                end
+            end
+        else
+            push!(deleted, k)
+        end
     end
-end
-
-diff(a::Elem, b::Elem) =
-    Replace(a, b)
-
-function diff(a::Attrs, b::Attrs)
-    if a === b return nothing end
-
-    added = setdiff(b, a)
-    deleted = setdiff(a, b)
-    if length(added) != 0 || length(deleted) != 0
-        return AttrDiff( added, deleted)
+    for (k, v) in b
+        if k in a continue end
+        push!(added, (k, v))
+    end
+    if isempty(added) && isempty(updated) && isempty(deleted)
+        return nothing
+    else
+        AttrDiff(added, updated, deleted)
     end
 end
 
