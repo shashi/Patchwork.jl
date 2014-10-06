@@ -53,42 +53,42 @@ e2 = e1 & a1
 d2 = diff(e1, e2)
 @test d2.children == nothing
 @test test_match(d2.attributes,
-                 AttrDiff(a1, attrs()))
+                 AttrDiff({(:class, "b"), (:id, "a")}, attrs(), attrs()))
 
 @test test_match(diff(e2,e1).attributes,
-                 AttrDiff(attrs(), a1))
+                 AttrDiff(attrs(), attrs(), {:class, :id}))
 
 # Vector diffs
 
-l1 = ul(li("1", _key=:a) >>
-        li("2", _key=:b) >>
+l1 = ul(li("1", _key=:a) +
+        li("2", _key=:b) +
         li("3", _key=:c))
 
-l2 = ul(li("1", _key=:a) >>
-        li("2", _key=:b) >>
+l2 = ul(li("1", _key=:a) +
+        li("2", _key=:b) +
         li("3", _key=:c))
 
 @test test_match(diff(l1, l2).children,
                  VectorDiff(Dict(), Dict(),Dict()))
 
-l3 = ul(li("3", _key=:c) >>
-        li("1", _key=:a) >>
+l3 = ul(li("3", _key=:c) +
+        li("1", _key=:a) +
         li("2", _key=:b))
 
 @test test_match(diff(l1, l3).children,
                  VectorDiff({1=>(2,nothing),2=>(3,nothing),3=>(1,nothing)},
                             Dict(),Dict()))
-l4 = ul(li("3", _key=:c) >>
-        li("1", _key=:a) >>
-        li("4", _key=:d) >>
+l4 = ul(li("3", _key=:c) +
+        li("1", _key=:a) +
+        li("4", _key=:d) +
         li("2", _key=:b))
 
 @test test_match(diff(l1, l4).children,
                  VectorDiff({1=>(2,nothing),2=>(4,nothing),3=>(1,nothing)},
                             {3=>Insert(li("4", _key=:d))},Dict()))
 
-l5 = ul(li("C", _key=:c) >>
-        li("4", _key=:d) >>
+l5 = ul(li("C", _key=:c) +
+        li("4", _key=:d) +
         li("2", _key=:b))
 
 i3 = li("3", _key=:c)

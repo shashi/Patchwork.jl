@@ -89,13 +89,13 @@ isequal(a::Elem, b::Elem) = false
 ==(a::Elem, b::Elem) = false
 
 # Combining elements
-(>>)(a::Union(Node, String), b::Union(Node, String)) =
-    NodeVector([convert(Node, a), convert(Node, b)])
-(>>)(a::NodeVector, b::Union(Node, String)) =
-    push(a, b)
-(>>)(a::Union(Node, String), b::NodeVector) = # slow!
-    append(NodeVector([a]), b)
-(>>)(a::NodeVector, b::NodeVector) = append(a, b)
+(+)(ns::Union(Node, String)...) =
+   NodeVector([convert(Node, n) for n in ns])
+(+)(a::NodeVector, b::Union(Node, String)) =
+   push(a, b)
+(+)(a::Union(Node, String), b::NodeVector) =
+   append(NodeVector([a]), b)
+(+)(a::NodeVector, b::NodeVector) = append(a, b)
 
 # Manipulating attributes
 attrs(; kwargs...) = kwargs
