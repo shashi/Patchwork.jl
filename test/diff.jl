@@ -7,7 +7,7 @@ import Patchwork:
            ElemDiff,
            AttrDiff,
            VectorDiff,
-           PCDATA,
+           Text,
            Replace,
            Insert,
            Delete
@@ -41,8 +41,8 @@ d1 = diff(e1, p("b"))
     d1,
     ElemDiff(p("a"),
              nothing,
-             Replace(pcdata("a"),
-                     pcdata("b"))))
+             Replace(text("a"),
+                     text("b"))))
 
 # Attribute diffs
 a1 = attrs(id="a", class="b")

@@ -13,8 +13,7 @@ import Base:
 
 export Node,
        Elem,
-       PCDATA,
-       pcdata,
+       text,
        NodeVector,
        Attrs,
        attrs,
@@ -30,19 +29,14 @@ abstract Node
 
 key(n::Node) = n.key
 
-immutable CDATA <: Node
+immutable Text <: Node
     key::MaybeKey
     value::ByteString
 end
+text(xs...; _key::MaybeKey=nothing) =
+    Text(_key, string(xs...))
 
-immutable PCDATA <: Node
-    key::MaybeKey
-    value::ByteString
-end
-pcdata(xs...; _key::MaybeKey=nothing) =
-    PCDATA(_key, string(xs...))
-
-convert(::Type{Node}, s::String) = pcdata(s)
+convert(::Type{Node}, s::String) = text(s)
 promote_rule(::Type{Node}, ::Type{String}) = Node
 
 # Abstract out the word "Persistent"
@@ -56,7 +50,7 @@ convert(::Type{NodeVector}, x) =
 convert(::Type{NodeVector}, x::NodeVector) =
     x
 convert(::Type{NodeVector}, x::String) =
-    PersistentVector{Node}([pcdata(x)])
+    PersistentVector{Node}([text(x)])
 convert(::Type{Attrs}, x) =
     Attrs(x)
 
@@ -88,8 +82,8 @@ isequal{ns,name}(a::Elem{ns,name}, b::Elem{ns,name}) =
                 sequal(a.children, b.children))
 isequal(a::Elem, b::Elem) = false
 
-==(a::PCDATA, b::PCDATA) = a.value == b.value
-=={ns, name}(a::Parent{ns, name}, b::Parent{ns,name}) =
+==(a::Text, b::Text) = a.value == b.value
+=={ns, name}(a::Elem{ns, name}, b::Elem{ns,name}) =
     a === b || (a.attributes == b.attributes &&
                 a.children == b.children)
 ==(a::Elem, b::Elem) = false
