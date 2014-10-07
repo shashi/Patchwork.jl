@@ -15,19 +15,19 @@ type VectorDiff <: Patch
 end
 VectorDiff() = VectorDiff(Dict(), Dict(), Dict())
 
-function key_idxs(ns)
+function key_idxs(ns; keyfn=key)
     i = 1
     idxs = Dict()
     for x in ns
-        if key(x) != nothing
-            idxs[key(x)] = i
+        if keyfn(x) != nothing
+            idxs[keyfn(x)] = i
         end
         i += 1
     end
     idxs
 end
 
-function diff(a::NodeVector, b::NodeVector)
+function diff(a::AbstractVector, b::AbstractVector; keyfn=key)
     if a === b return nothing end
 
     if length(a) == 1 && length(b) == 1
@@ -40,7 +40,7 @@ function diff(a::NodeVector, b::NodeVector)
 
     patch = VectorDiff()
     for i = 1:length(a)
-        moved_to = get(b_key_idxs, key(a[i]), 0)
+        moved_to = get(b_key_idxs, keyfn(a[i]), 0)
         if moved_to == 0
             patch.deletes[i] = Delete(a[i])
         else
@@ -51,7 +51,7 @@ function diff(a::NodeVector, b::NodeVector)
     end
 
     for i = 1:length(b)
-        moved_from = get(a_key_idxs, key(b[i]), 0)
+        moved_from = get(a_key_idxs, keyfn(b[i]), 0)
         if moved_from == 0
             patch.inserts[i] = Insert(b[i])
         end
