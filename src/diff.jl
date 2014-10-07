@@ -65,7 +65,7 @@ type ElemDiff <: Patch
     children
 end
 
-type AttrDiff <: Patch
+type DictDiff <: Patch
     added
     updated
     deleted
@@ -122,7 +122,7 @@ function diff(a::Associative, b::Associative)
     if isempty(added) && isempty(updated) && isempty(deleted)
         return nothing
     else
-        AttrDiff(added, updated, deleted)
+        DictDiff(added, updated, deleted)
     end
 end
 
@@ -156,7 +156,7 @@ function writestring(io::IO, p::ElemDiff)
     writestring(io, p.children)
 end
 
-function writestring(io::IO, p::AttrDiff)
+function writestring(io::IO, p::DictDiff)
     write(io, "\n- ")
     map(a -> writehtml(io, a), p.deleted)
     write(io, "\n+ ")

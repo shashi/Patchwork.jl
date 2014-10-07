@@ -5,7 +5,7 @@ using Base.Test
 import Patchwork:
            Patch,
            ElemDiff,
-           AttrDiff,
+           DictDiff,
            VectorDiff,
            Text,
            Replace,
@@ -53,10 +53,10 @@ e2 = e1 & a1
 d2 = diff(e1, e2)
 @test d2.children == nothing
 @test test_match(d2.attributes,
-                 AttrDiff({(:class, "b"), (:id, "a")}, attrs(), attrs()))
+                 DictDiff({(:class, "b"), (:id, "a")}, attrs(), attrs()))
 
 @test test_match(diff(e2,e1).attributes,
-                 AttrDiff(attrs(), attrs(), {:class, :id}))
+                 DictDiff(attrs(), attrs(), {:class, :id}))
 
 # Vector diffs
 
