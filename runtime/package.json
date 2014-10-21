@@ -1,0 +1,9 @@
+{
+    "name": "",
+    "version": "",
+    "description": "",
+    "dependencies": {
+        "vtree": "*",
+        "virtual-dom": "0.0.8"
+    }
+}

@@ -107,4 +107,8 @@ include("combinators.jl")
 include("writers.jl")
 include("diff.jl")
 
+if isdefined(Main, :IJulia)
+    include("ijulia.jl")
+end
+
 end # module
