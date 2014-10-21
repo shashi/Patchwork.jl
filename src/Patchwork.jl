@@ -31,7 +31,7 @@ key(n::Node) = n.key
 
 immutable Text <: Node
     key::MaybeKey
-    value::ByteString
+    text::ByteString
 end
 text(xs...; _key::MaybeKey=nothing) =
     Text(_key, string(xs...))
@@ -82,7 +82,7 @@ isequal{ns,name}(a::Elem{ns,name}, b::Elem{ns,name}) =
                 sequal(a.children, b.children))
 isequal(a::Elem, b::Elem) = false
 
-==(a::Text, b::Text) = a.value == b.value
+==(a::Text, b::Text) = a.text == b.text
 =={ns, name}(a::Elem{ns, name}, b::Elem{ns,name}) =
     a === b || (a.attributes == b.attributes &&
                 a.children == b.children)

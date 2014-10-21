@@ -80,7 +80,7 @@ type Delete <: Patch
 end
 
 function diff(a::Text, b::Text)
-    if a === b || a.value == b.value
+    if a === b || a.text == b.text
         return nothing
     end
     return Replace(a, b)

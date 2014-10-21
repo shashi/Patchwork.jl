@@ -13,7 +13,7 @@ end
 
 # Write HTML
 writehtml(io::IO, t::Text) =
-    write(io, t.value)
+    write(io, t.text)
 
 function writehtml(io::IO, attr::(Any, Any))
     k, v = attr
