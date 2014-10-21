@@ -9,6 +9,10 @@ WIP library for composing persistent XML and HTML documents.
 In IJulia:
 
 ```julia
+
+Pkg.clone("git://github.com/shashi/FunctionalCollections.git.jl")
+Pkg.checkout("FunctionalCollections", "pvec-fixes")
+
 using Patchwork, Patchwork.HTML5
 
 greet(name) = h1("Hey " + name) + p("Welcome to the machine.", class="welcome")
