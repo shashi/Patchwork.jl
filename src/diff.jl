@@ -1,7 +1,5 @@
 export diff
 
-using Debug
-
 abstract Patch
 type Replace <: Patch
     a
