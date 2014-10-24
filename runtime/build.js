@@ -1,43 +1,59 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var VNode = require('vtree/vnode');
 var VText = require('vtree/vtext');
+var VPatch = require('vtree/vpatch');
 var diff = require('virtual-dom/diff');
 var patch = require('virtual-dom/patch');
 var createElement = require('virtual-dom/create-element');
 
 
-var P = {
-    NAMESPACES: {
-        "xhtml": "http://www.w3.org/1999/xhtml",
-        "svg": "http://www.w3.org/2000/svg"
-    },
-    debugLog: function () {
-        console.log(arguments);
-    },
-    render: function (id, jlNode) {
-        var outer = document.getElementById(id),
-            vnode = P.makeVNode(jlNode),
-            el = createElement(vnode);
-            
-        outer.appendChild(el);
-        return el;
-    },
-    makeVNode: function (jlNode) {
-        if ('text' in jlNode) {
-           return new VText(jlNode.text);
-        }
-
-        vnode = new VNode(jlNode.tagName, jlNode.properties,
-                          _.map(jlNode.children, P.makeVNode),
-                          jlNode.key, P.NAMESPACES[jlNode.namespace]);
-        P.debugLog(vnode, createElement(vnode))
-        return vnode;
+function Patchwork(el, jlNode) {
+    if (typeof el == "string") {
+        el = document.getElementById(el);
+    }
+    this.element = el
+    if (jlNode) {
+        // Note: makes this.root
+        this.mount(
+            Patchwork.makeVNode(jlNode)
+        );
     }
 }
 
-window.Patchwork = P;
+var P = Patchwork;
 
-},{"virtual-dom/create-element":2,"virtual-dom/diff":3,"virtual-dom/patch":7,"vtree/vnode":25,"vtree/vtext":26}],2:[function(require,module,exports){
+// Utilities
+_.extend(Patchwork, {
+    NAMESPACES: {
+        "xhtml": "http://www.w3.org/1999/xhtml",
+        "svg": "http://www.w3.org/2000/svg",
+        null: "http://www.w3.org/1999/xhtml"
+    },
+    refDiff: function (a, b) {
+        return diff(P.makeVNode(a), P.makeVNode(b));
+    },
+    makeVNode: function (jlNode) {
+        if ('text' in jlNode) return new VText(jlNode.text);
+        return new VNode(jlNode.tagName, jlNode.properties,
+                         _.map(jlNode.children, Patchwork.makeVNode),
+                         jlNode.key, Patchwork.NAMESPACES[jlNode.namespace]);
+    },
+});
+
+Patchwork.prototype = {
+    mount: function (vnode) {
+        var el = createElement(vnode);
+        this.element.appendChild(el);
+        this.root = vnode;
+        return el;
+    },
+    patch: function (vpatch) {
+    }
+}
+
+window.Patchwork = Patchwork;
+
+},{"virtual-dom/create-element":2,"virtual-dom/diff":3,"virtual-dom/patch":7,"vtree/vnode":25,"vtree/vpatch":26,"vtree/vtext":27}],2:[function(require,module,exports){
 var createElement = require("./vdom/create-element")
 
 module.exports = createElement
@@ -54,7 +70,7 @@ if (typeof document !== "undefined") {
     module.exports = require("min-document");
 }
 
-},{"min-document":27}],5:[function(require,module,exports){
+},{"min-document":28}],5:[function(require,module,exports){
 module.exports = isObject
 
 function isObject(x) {
@@ -918,6 +934,30 @@ VirtualNode.prototype.type = "VirtualNode"
 },{"./is-vhook":21,"./is-vnode":22,"./is-widget":23,"./version":24}],26:[function(require,module,exports){
 var version = require("./version")
 
+VirtualPatch.NONE = 0
+VirtualPatch.VTEXT = 1
+VirtualPatch.VNODE = 2
+VirtualPatch.WIDGET = 3
+VirtualPatch.PROPS = 4
+VirtualPatch.ORDER = 5
+VirtualPatch.INSERT = 6
+VirtualPatch.REMOVE = 7
+VirtualPatch.THUNK = 8
+
+module.exports = VirtualPatch
+
+function VirtualPatch(type, vNode, patch) {
+    this.type = Number(type)
+    this.vNode = vNode
+    this.patch = patch
+}
+
+VirtualPatch.prototype.version = version
+VirtualPatch.prototype.type = "VirtualPatch"
+
+},{"./version":24}],27:[function(require,module,exports){
+var version = require("./version")
+
 module.exports = VirtualText
 
 function VirtualText(text) {
@@ -927,6 +967,6 @@ function VirtualText(text) {
 VirtualText.prototype.version = version
 VirtualText.prototype.type = "VirtualText"
 
-},{"./version":24}],27:[function(require,module,exports){
+},{"./version":24}],28:[function(require,module,exports){
 
 },{}]},{},[1]);
