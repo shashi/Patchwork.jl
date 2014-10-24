@@ -27,14 +27,11 @@ typealias MaybeKey Union(Nothing, Symbol)
 # A Patchwork node
 abstract Node
 
-key(n::Node) = n.key
-
 immutable Text <: Node
-    key::MaybeKey
     text::ByteString
 end
-text(xs...; _key::MaybeKey=nothing) =
-    Text(_key, string(xs...))
+text(xs...) =
+    Text(string(xs...))
 
 convert(::Type{Node}, s::String) = text(s)
 promote_rule(::Type{Node}, ::Type{String}) = Node
@@ -60,6 +57,9 @@ immutable Elem{ns, tag} <: Node
     attributes::Attrs
     children::NodeVector
 end
+
+key(n::Elem) = n.key
+key(n::Text) = nothing
 
 # A document type
 immutable DocVariant{ns}
