@@ -43,20 +43,38 @@ typealias Attrs PersistentHashMap
 const EmptyNode = NodeVector([])
 
 convert(::Type{NodeVector}, x) =
-    PersistentVector{Node}(x)
+    NodeVector(x)
+
+convert{T <: Node}(::Type{NodeVector}, x::T) =
+    NodeVector([x])
+
 convert(::Type{NodeVector}, x::NodeVector) =
     x
+
 convert(::Type{NodeVector}, x::String) =
-    PersistentVector{Node}([text(x)])
+    NodeVector([text(x)])
+
 convert(::Type{Attrs}, x) =
     Attrs(x)
 
 # A DOM Element
 immutable Elem{ns, tag} <: Node
+    count::Int
     key::MaybeKey
     attributes::Attrs
     children::NodeVector
+
+    function Elem(key, attributes, children)
+        childvec = convert(NodeVector, children)
+        new(count(childvec), key,
+            convert(Attrs, attributes),
+            childvec)
+    end
 end
+
+count(t::Text) = 1
+count(el::Elem) = el.count
+count(v::NodeVector) = Int[count(x) for x in v] |> sum
 
 key(n::Elem) = n.key
 key(n::Text) = nothing
