@@ -18,7 +18,6 @@ end
 
 type DictDiff <: Patch
     updated
-    deleted
 end
 
 function key_idxs(ns; keyfn=key)
@@ -104,7 +103,7 @@ function diff!{ns, tag}(a::Elem{ns, tag}, b::Elem{ns, tag}, index, patches)
 
     attrpatch = diff(a.attributes, b.attributes)
     if !is(attrpatch, nothing)
-        patch = push!(patch, attrpatch)
+        patch = push!(patch, DictDiff(attrpatch))
     end
 
     diff!(a.children, b.children, index, patches, parentpatch=patch)
@@ -116,29 +115,29 @@ end
 function diff(a::Associative, b::Associative)
     if a === b return nothing end
 
-    updated = Any[]
-    deleted = Any[]
+    updated = Dict()
     for (k, v) in a
         if k in b
             if is(v != b[k])
                 if isa(b[k], Associative)
-                    push!(updated, (k, diff(v, b[k])))
+                    updated[k] = diff(v, b[k])
                 else
-                    push!(updated, (k, b[k]))
+                    updated[k] = b[k]
                 end
             end
         else
-            push!(deleted, k)
+            # deleted
+            updated[k] = nothing
         end
     end
     for (k, v) in b
         if k in a continue end
-        push!(updated, (k, v))
+        updated[k] = v
     end
-    if isempty(updated) && isempty(updated) && isempty(deleted)
+    if isempty(updated)
         return nothing
     else
-        DictDiff(updated, deleted)
+        return updated
     end
 end
 
@@ -147,4 +146,3 @@ function diff(a::Node, b::Node)
     diff!(a, b, 0, patches)
     return patches
 end
-
