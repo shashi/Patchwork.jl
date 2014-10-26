@@ -2,23 +2,11 @@ export diff
 
 abstract Patch
 
-type Insert <: Patch
-    b
-end
-
-type Overwrite <: Patch
-    b
-end
-
+type Insert <: Patch b end
+type Overwrite{T <: Node} <: Patch b::T end
 type Delete <: Patch end
-
-type Reorder <: Patch
-    moves
-end
-
-type DictDiff <: Patch
-    updated
-end
+type Reorder <: Patch moves end
+type DictDiff <: Patch updates end
 
 function key_idxs(ns)
     i = j = 1
@@ -117,29 +105,29 @@ end
 function diff(a::Associative, b::Associative)
     if a === b return nothing end
 
-    updated = Dict()
+    updates = Dict()
     for (k, v) in a
         if k in b
             if is(v != b[k])
                 if isa(b[k], Associative)
-                    updated[k] = diff(v, b[k])
+                    updates[k] = diff(v, b[k])
                 else
-                    updated[k] = b[k]
+                    updates[k] = b[k]
                 end
             end
         else
             # deleted
-            updated[k] = nothing
+            updates[k] = nothing
         end
     end
     for (k, v) in b
         if k in a continue end
-        updated[k] = v
+        updates[k] = v
     end
-    if isempty(updated)
+    if isempty(updates)
         return nothing
     else
-        return updated
+        return updates
     end
 end
 
