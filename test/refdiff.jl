@@ -18,6 +18,10 @@ b = a & attrs(className="cls")
 p,q,r = li("p"), li("q"), li("r")
 
 @compare a a
+@compare span(a) span(a + "a")
+@compare span(a + "a") span(a)
+@compare span(a + "a") span(a + "b")
+@compare span(a + "a" + b) span(a + "a")
 @compare a b
 @compare a & attrs(style=[:color => "red"]) a & attrs(style=[:color => "blue"])
 @compare b a

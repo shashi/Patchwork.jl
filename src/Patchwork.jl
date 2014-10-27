@@ -72,9 +72,11 @@ immutable Elem{ns, tag} <: Node
     end
 end
 
-count(t::Text) = 1
+_count(t::Text) = 1
+_count(el::Elem) = el.count
+count(t::Text) = 0
 count(el::Elem) = el.count
-count(v::NodeVector) = Int[count(x) for x in v] |> sum
+count(v::NodeVector) = Int[_count(x) for x in v] |> sum
 
 key(n::Elem) = n.key
 key(n::Text) = nothing
