@@ -5,6 +5,7 @@
     "dependencies": {
         "x-is-array": "^0.1.0",
         "is-object": "^0.1.2",
-        "virtual-dom": "0.0.8"
+        "virtual-dom": "0.0.21",
+        "vtree": "0.0.21"
     }
 }

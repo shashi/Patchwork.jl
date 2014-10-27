@@ -1,5 +1,3 @@
-var noChild = {}
-
 module.exports = nodeIndex
 
 function nodeIndex(tree, indices, nodes) {

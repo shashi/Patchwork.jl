@@ -1,5 +1,5 @@
-var isWidget = require("virtual-dom/vtree/is-widget")
-var VPatch = require("virtual-dom/vtree/vpatch")
+var isWidget = require("vtree/is-widget")
+var VPatch = require("vtree/vpatch")
 var patchUtil = require("./patch-util.js")
 
 module.exports = applyPatch
