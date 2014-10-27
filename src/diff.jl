@@ -52,11 +52,11 @@ function diff!(a::AbstractVector, b::AbstractVector, index, patches; parentpatch
                 patches[index] = Delete()
             else
                 diff!(a[i], b[moved_to], index, patches)
-                index += count(a[i])
                 if i != moved_to
                     ord[i] = moved_to
                 end
             end
+            index += count(a[i])
         end
         if i <= len_b
             moved_from = get(a_key_idxs, b_keys[i], 0)

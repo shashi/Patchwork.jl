@@ -28,9 +28,11 @@ function applyPatch(type, vNode, patch) {
 
 function offsetCount(node, count) {
     if (!node) { return }
-    if (node.count) {
-        node.count + count;
-        offsetCount(node.up, count);
+    if (node.count !== undefined) {
+        node.count = node.count + count
+        offsetCount(node.up, count)
+    } else {
+        node.count = count
     }
 }
 
@@ -42,7 +44,7 @@ function removeNode(node) {
     var idx = up.children.indexOf(node)
     if (idx > -1) {
         up.children.splice(idx, 1)
-        offsetCount(up, -node.count)
+        offsetCount(up, -node.count - 1)
     }
     delete node
 
@@ -51,7 +53,7 @@ function removeNode(node) {
 
 function insertNode(node, child) {
     node.children.push(child)
-    offsetCount(node, child.count)
+    offsetCount(node, child.count + 1)
     child.up = node
     return node
 }

@@ -8,7 +8,7 @@ macro compare(a, b)
     quote
         refDiff($(esc(a)), $(esc(b)), label=$hint)
         println($hint)
-        println(diff($(esc(a)), $(esc(b))))
+        println(jsonfmt(diff($(esc(a)), $(esc(b)))))
     end
 end
 

@@ -53,8 +53,8 @@ var P = Patchwork = {
         if (isArray(jlPatch)) {
             // multiple patches to the same VNode
             var ps = [];
-            for (var i=0, l=ps.length; i < l; i++) {
-                ps[i] = P.makeVPatch(vnode, ps[i])
+            for (var i=0, l=jlPatch.length; i < l; i++) {
+                ps[i] = P.makeVPatch(vnode, jlPatch[i])
             }
             return ps
         }

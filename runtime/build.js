@@ -54,8 +54,8 @@ var P = Patchwork = {
         if (isArray(jlPatch)) {
             // multiple patches to the same VNode
             var ps = [];
-            for (var i=0, l=ps.length; i < l; i++) {
-                ps[i] = P.makeVPatch(vnode, ps[i])
+            for (var i=0, l=jlPatch.length; i < l; i++) {
+                ps[i] = P.makeVPatch(vnode, jlPatch[i])
             }
             return ps
         }
@@ -1111,16 +1111,25 @@ function patchObject(obj, patch) {
 
 },{"is-object":3}],27:[function(require,module,exports){
 var mutateNode = require("./vnode-patch-op")
+var isArray = require('x-is-array')
 
 module.exports = patchVNode
 
 function patchVNode(root, patches) {
 
     linkParents(root)
+
     for (var key in patches) {
         if (key === "a") continue
         patch = patches[key]
-        mutateNode(patch.type, patch.vNode, patch.patch)
+        if (isArray(patch)) {
+
+            for (var i=0, l=patch.length; i < l; i++) {
+                mutateNode(patch[i].type, patch[i].vNode, patch[i].patch)
+            }
+        } else {
+            mutateNode(patch.type, patch.vNode, patch.patch)
+        }
     }
 
     return root
@@ -1136,7 +1145,7 @@ function linkParents(vNode) {
     }
 }
 
-},{"./vnode-patch-op":28}],28:[function(require,module,exports){
+},{"./vnode-patch-op":28,"x-is-array":25}],28:[function(require,module,exports){
 var isWidget = require("virtual-dom/vtree/is-widget")
 var VPatch = require("virtual-dom/vtree/vpatch")
 var patchUtil = require("./patch-util.js")
@@ -1167,9 +1176,11 @@ function applyPatch(type, vNode, patch) {
 
 function offsetCount(node, count) {
     if (!node) { return }
-    if (node.count) {
-        node.count + count;
-        offsetCount(node.up, count);
+    if (node.count !== undefined) {
+        node.count = node.count + count
+        offsetCount(node.up, count)
+    } else {
+        node.count = count
     }
 }
 
@@ -1181,7 +1192,7 @@ function removeNode(node) {
     var idx = up.children.indexOf(node)
     if (idx > -1) {
         up.children.splice(idx, 1)
-        offsetCount(up, -node.count)
+        offsetCount(up, -node.count - 1)
     }
     delete node
 
@@ -1190,7 +1201,7 @@ function removeNode(node) {
 
 function insertNode(node, child) {
     node.children.push(child)
-    offsetCount(node, child.count)
+    offsetCount(node, child.count + 1)
     child.up = node
     return node
 }
