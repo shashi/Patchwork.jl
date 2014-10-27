@@ -110,8 +110,7 @@ When used with [Reactive](http://julialang.org/Reactive.jl), any `Signal{Elem}` 
 I am working on making this as simple as `Pkg.add("Patchwork")` but until then, you will need to take the following steps:
 
 * `Pkg.clone("git://github.com/shashi/Patchwork.jl")`
-* `Pkg.clone("git://github.com/shashi/FunctionalCollections.jl")`
-* `Pkg.checkout("FunctionalCollections", "pvec-fixes")
+* `Pkg.clone("FunctionalCollections")`
 
 ## Development
 
@@ -124,3 +123,8 @@ npm install .
 npm install -g browserify
 make
 ```
+
+## Thanks
+
+This package is largely based on Matt Esch's excellent [virtual-dom](https://github.com/Matt-Esch/virtual-dom) and [vtree](https://github.com/Matt-Esch/vtree) JavaScript modules. Patchwork's JS runtime makes use of and extends these.
+
