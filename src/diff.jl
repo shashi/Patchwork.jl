@@ -1,5 +1,7 @@
 export diff
 
+import Base.diff
+
 abstract Patch
 
 type Insert <: Patch b end

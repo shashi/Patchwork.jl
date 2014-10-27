@@ -6,14 +6,14 @@ function make_elems{ns}(variant::DocVariant{ns})
     push!(contents.args, exports)
     for tag in variant.elements
         push!(contents.args, quote
-            $tag(attrs, content; _key::MaybeKey=nothing) =
+            $tag(content; _key::MaybeKey=nothing, kwargs...) =
                 Elem($(string(ns)),
                      $(string(tag)),
-                     attrs,
+                     kwargs,
                      content,
                      _key)
 
-            $tag(content=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
+            $tag(content...; _key::MaybeKey=nothing, kwargs...) =
                 Elem($(string(ns)),
                      $(string(tag)),
                      kwargs,
@@ -30,6 +30,8 @@ end
 module HTML5
 
 using Patchwork
+
+import Base.div
 
 eval(Patchwork.make_elems(Patchwork.html5))
 

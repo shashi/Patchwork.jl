@@ -43,7 +43,7 @@ typealias Attrs PersistentHashMap
 const EmptyNode = NodeVector([])
 
 convert(::Type{NodeVector}, x) =
-    NodeVector(x)
+    NodeVector([convert(Node, y) for y in x])
 
 convert{T <: Node}(::Type{NodeVector}, x::T) =
     NodeVector([x])
@@ -88,14 +88,13 @@ end
 
 # constructors
 Elem(ns, name, attrs, children, _key::MaybeKey=nothing) =
-    Elem{is(ns, None) ? ns : symbol(ns) , symbol(name)}(
-        _key, attrs, children)
+    Elem{symbol(ns) , symbol(name)}(_key, attrs, children)
 
 Elem(ns, name, children=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
-    Elem(ns, name, Attr[map(Attr, kwargs)...], children, _key=_key)
+    Elem(ns, name, kwargs, children, _key)
 
 Elem(name, children=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
-    Elem(None, name, Attr[map(Attr, kwargs)...], children, _key=_key)
+    Elem(:xhtml, name, kwargs, children, _key)
 
 isequal{ns,name}(a::Elem{ns,name}, b::Elem{ns,name}) =
     a === b || (isequal(a.attributes, b.attributes) &&
