@@ -108,13 +108,10 @@ isequal(a::Elem, b::Elem) = false
 ==(a::Elem, b::Elem) = false
 
 # Combining elements
-(+)(ns::Union(Node, String)...) =
-   NodeVector([convert(Node, n) for n in ns])
-(+)(a::NodeVector, b::Union(Node, String)) =
-   push(a, b)
-(+)(a::Union(Node, String), b::NodeVector) =
-   append(NodeVector([a]), b)
-(+)(a::NodeVector, b::NodeVector) = append(a, b)
+(<<){ns, tag}(a::Elem{ns, tag}, b::AbstractArray) =
+    Elem{ns, tag}(key(a), a.attributes, append(a.children, b))
+(<<){ns, tag}(a::Elem{ns, tag}, b::Node) =
+    Elem{ns, tag}(key(a), a.attributes, push(a.children, b))
 
 # Manipulating attributes
 attrs(; kwargs...) = kwargs
