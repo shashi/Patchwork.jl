@@ -7,6 +7,7 @@ var createElement = require('virtual-dom/create-element');
 var nodeIndex = require('./node-index');
 var patchVNode = require('./patch-vnode');
 var isArray = require('x-is-array');
+var isVPatch = require('./is-vpatch');
 
 var P = Patchwork = {
     nodes: {},
@@ -95,8 +96,11 @@ Patchwork.Node.prototype = {
         this.root = vnode;
         return el;
     },
-    patch: function (vpatches) {
+    applyPatch: function (vpatches) {
         // apply patch to DOM nodes
+        if (!isVPatch(vpatches)) {
+            vpatches = P.makeVPatches(this.root, vpatches)
+        }
         this.element = patch(this.element, vpatches)
         this.root = patchVNode(this.root, vpatches)
     }
@@ -112,9 +116,8 @@ if (jQuery) {
                 var nodeId = msg.content.data.pwid;
                 comm.on_msg(function (msg) {
                     var node = P.nodes[nodeId],
-                        raw = msg.content.data,
-                        vpatches = P.makeVPatches(node.root, raw)
-                    node.patch(vpatches)
+                        patches = msg.content.data
+                    node.applyPatch(patches)
                 });
             });
         }
