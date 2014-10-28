@@ -4,11 +4,11 @@ import Base.diff
 
 abstract Patch
 
-type Insert <: Patch b end
-type Overwrite{T <: Node} <: Patch b::T end
-type Delete <: Patch end
-type Reorder <: Patch moves end
-type DictDiff <: Patch updates end
+immutable Insert <: Patch b end
+immutable Overwrite{T <: Node} <: Patch b::T end
+immutable Delete <: Patch end
+immutable Reorder <: Patch moves::Dict end
+immutable DictDiff <: Patch updates::Dict end
 
 function key_idxs(ns)
     i = j = 1
@@ -104,15 +104,23 @@ function diff!{ns, tag}(a::Elem{ns, tag}, b::Elem{ns, tag}, index, patches)
     end
 end
 
+are_equal(a::AbstractArray, b::AbstractArray) = a === b || a == b
+are_equal(a::String, b::Symbol) = a == string(b)
+are_equal(a::Symbol, b::String) = string(a) == b
+are_equal(a, b) = a == b
+
 function diff(a::Associative, b::Associative)
     if a === b return nothing end
 
     updates = Dict()
     for (k, v) in a
-        if k in b
-            if is(v != b[k])
+        if haskey(b, k)
+            if !are_equal(v, b[k])
                 if isa(b[k], Associative)
-                    updates[k] = diff(v, b[k])
+                    dictdiff = diff(v, b[k])
+                    if !is(dictdiff, nothing)
+                        updates[k] = dictdiff
+                    end
                 else
                     updates[k] = b[k]
                 end
@@ -123,7 +131,7 @@ function diff(a::Associative, b::Associative)
         end
     end
     for (k, v) in b
-        if k in a continue end
+        if haskey(a, k) continue end
         updates[k] = v
     end
     if isempty(updates)
