@@ -1,4 +1,5 @@
 var VNode = require('vtree/vnode');
+var svg = require('virtual-hyperscript/svg');
 var VText = require('vtree/vtext');
 var VPatch = require('vtree/vpatch');
 var diff = require('virtual-dom/diff');
@@ -17,7 +18,9 @@ var P = Patchwork = {
         this.id = id
         if (jlNode) {
             // Note: makes this.root
-            this.mount(Patchwork.makeVNode(jlNode), el)
+            var vnode = Patchwork.makeVNode(jlNode)
+            P.log("makeVNode: ", jlNode, "=>", vnode)
+            this.mount(vnode, el)
         }
         P.nodes[id] = this
     },
@@ -34,9 +37,14 @@ var P = Patchwork = {
     },
     makeVNode: function (jlNode) {
         if ('text' in jlNode) return new VText(jlNode.text);
-        return new VNode(jlNode.tagName, jlNode.properties,
-                         _.map(jlNode.children, Patchwork.makeVNode),
-                         jlNode.key, Patchwork.NAMESPACES[jlNode.namespace]);
+        if (jlNode.namespace === "svg") {
+            return svg(jlNode.tagName, _.extend(jlNode.properties, {key: jlNode.key}),
+                         _.map(jlNode.children, Patchwork.makeVNode))
+        } else {
+            return new VNode(jlNode.tagName, jlNode.properties,
+                             _.map(jlNode.children, Patchwork.makeVNode),
+                             jlNode.key, Patchwork.NAMESPACES[jlNode.namespace]);
+        }
     },
     makeVPatches: function (root, jlPatches) {
         var indices = [];
@@ -76,6 +84,9 @@ var P = Patchwork = {
         case VPatch.VNODE:
             return vpatch(P.makeVNode(patch));
         case VPatch.PROPS:
+            if (vnode.namespace === P.NAMESPACES["svg"]) {
+                patch = svg('dummy', patch, []).properties
+            }
             return vpatch(patch);
         case VPatch.ORDER:
             return vpatch(patch);
@@ -97,6 +108,7 @@ var P = Patchwork = {
 Patchwork.Node.prototype = {
     mount: function (vnode, outer) {
         var el = createElement(vnode);
+        P.log("createElement: ", vnode, "=>", el)
         outer.appendChild(el)
         this.element = el
         this.root = vnode;
