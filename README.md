@@ -109,9 +109,14 @@ When used with [Reactive](http://julialang.org/Reactive.jl), any `Signal{Elem}` 
 
 I am working on making this as simple as `Pkg.add("Patchwork")` but until then, you will need to take the following steps:
 
-* `Pkg.clone("git://github.com/shashi/Patchwork.jl")`
-* `Pkg.clone("FunctionalCollections")`
+```julia
+Pkg.update() # Unless you have Reactive v0.1.9
+Pkg.checkout("IJulia", "master")
+# You might have to restart the kernel if you ran this from IJulia
+Pkg.clone("git://github.com/shashi/Patchwork.jl")
+Pkg.checkout("FunctionalCollections", "master")
 
+```
 ## Development
 
 You will need a recent `nodejs` and `npm` installed to hack on the JavaScript part of this package.
