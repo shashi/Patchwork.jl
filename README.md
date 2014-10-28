@@ -1,6 +1,6 @@
 # Patchwork
 
-<!--[![Build Status](https://travis-ci.org/shashi/Patchwork.jl.svg?branch=master)](https://travis-ci.org/shashi/Patchwork.jl) -->
+[![Build Status](https://travis-ci.org/shashi/Patchwork.jl.svg?branch=master)](https://travis-ci.org/shashi/Patchwork.jl)
 
 A library for [DOM](http://www.w3.org/TR/WD-DOM/introduction.html) representation in Julia supporting [element creation](#creating-elements), [diff computation](#diff-computation) and [browser-side patching](#javascript-setup-and-patching) for efficient re-rendering in interactive browser-based interfaces.
 

@@ -1,101 +1,75 @@
 using Patchwork, Patchwork.HTML5
+using FactCheck
 #using Match
 using Base.Test
 
 import Patchwork:
            Patch,
-           ElemDiff,
-           DictDiff,
-           VectorDiff,
            Text,
-           Replace,
+           Elem,
+           Overwrite,
            Insert,
-           Delete
+           Delete,
+           Reorder,
+           DictDiff,
+           are_equal
 
-function test_match(x, pattern)
-    if string(x) != string(pattern)
-        println("Mismatch:")
-        println(x)
-        println(pattern)
+
+# Structurally same
+sameas(x, y) = false
+sameas{T}(x::T, y::T) = x == y
+sameas{T <: Patch}(x::T, y::T) =
+    all([sameas(getfield(x, n), getfield(x, n)) for n in names(x)])
+sameas(l::AbstractArray, r::AbstractArray) = all(map(sameas, l, r))
+
+function sameas(l::Associative, r::Associative)
+    if length(r) != length(r)
         return false
     end
+    for (k, v) in l
+        if !haskey(r, k) || !sameas(v, r[k])
+            println("Mismatched dict key ", k, ": ", v, " <> ", r[k])
+            return false
+        end
+    end
     true
-    #@match x begin
-    #    pattern => true
-    #    _ => false
-    #end
 end
+sameas(x) = (y) -> sameas(x, y)
 
-# Single child elements
+facts("Testing Diffs") do
+    context("testing are_equal") do
 
-# No difference
-e1 = p("a")
-@test diff(e1, p("a")) == nothing
+        @fact are_equal(1, 1) => true
+        @fact are_equal(1, 2) => false
+        @fact are_equal(1, 1.0) => true
+        @fact are_equal(1, 1.5) => false
+        @fact are_equal(:x, "x") => true
+        @fact are_equal("x", :x) => true
+        @fact are_equal(:x, :x) => true
+        @fact are_equal(:x, :y) => false
+        a = [:x, :y]
+        b = [:x, :y]
+        @fact are_equal(a, a) => true
+        @fact are_equal(a, b) => true
+    end
 
-d1 = diff(e1, p("b"))
-# diff.a must be e1
-@test d1.a === e1
+    context("things that should return empty patches") do
+        e1 = p("a")
+        e2 = p("b")
+        @fact diff(e1, e1) => isempty
+        @fact diff(p(e1), p(e1)) => isempty
+        @fact diff(e1, p("a")) => isempty
+        @fact diff(p(e1, e2), p(e1, e2)) => isempty
+        @fact diff(p(p("a"), e2), p(e1, p("b"))) => isempty
+        @fact diff(e1 & [:x => 1], p("a") & [:x => 1]) => isempty
+        @fact diff(e1 & [:x => [:y => 1]], p("a") & [:x => [:y => 1]]) => isempty
+    end
 
-# Diff children diff is just diff of the sole child
-@test test_match(
-    d1,
-    ElemDiff(p("a"),
-             nothing,
-             Replace(text("a"),
-                     text("b"))))
-
-# Attribute diffs
-a1 = attrs(id="a", class="b")
-e2 = e1 & a1
-
-@test diff(e2, e2) == nothing
-
-d2 = diff(e1, e2)
-@test d2.children == nothing
-@test test_match(d2.attributes,
-                 DictDiff({(:class, "b"), (:id, "a")}, attrs(), attrs()))
-
-@test test_match(diff(e2,e1).attributes,
-                 DictDiff(attrs(), attrs(), {:class, :id}))
-
-# Vector diffs
-
-l1 = ul(li("1", _key=:a),
-        li("2", _key=:b),
-        li("3", _key=:c))
-
-l2 = ul(li("1", _key=:a),
-        li("2", _key=:b),
-        li("3", _key=:c))
-
-@test test_match(diff(l1, l2).children,
-                 VectorDiff(Dict(), Dict(),Dict()))
-
-l3 = ul(li("3", _key=:c),
-        li("1", _key=:a),
-        li("2", _key=:b))
-
-@test test_match(diff(l1, l3).children,
-                 VectorDiff({1=>(2,nothing),2=>(3,nothing),3=>(1,nothing)},
-                            Dict(),Dict()))
-l4 = ul(li("3", _key=:c),
-        li("1", _key=:a),
-        li("4", _key=:d),
-        li("2", _key=:b))
-
-@test test_match(diff(l1, l4).children,
-                 VectorDiff({1=>(2,nothing),2=>(4,nothing),3=>(1,nothing)},
-                            {3=>Insert(li("4", _key=:d))},Dict()))
-
-l5 = ul(li("C", _key=:c),
-        li("4", _key=:d),
-        li("2", _key=:b))
-
-i3 = li("3", _key=:c)
-C = li("C", _key=:c)
-
-@test diff(l1, l5).attributes == nothing
-@test test_match(diff(l1, l5).children,
-                 VectorDiff({2=>(3,nothing),3=>(1,diff(i3, C))},
-                            {2=>Insert(li("4", _key=:d))},
-                            {1=>Delete(li("1", _key=:a))}))
+    context("testing Overwrite") do
+        e1 = p("a")
+        e2 = p("b")
+        @fact Text("a") => Text("a")
+        @fact diff(e1, e2) => sameas([1=>[Overwrite(Text("b"))]])
+        @fact diff(e1, e2) => sameas([1=>[Overwrite(Text("b"))]])
+    end
+end
