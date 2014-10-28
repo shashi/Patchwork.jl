@@ -12,6 +12,7 @@ var isVPatch = require('./is-vpatch');
 
 var P = Patchwork = {
     nodes: {},
+    debug: false,
     Node: function (id, jlNode) {
         el = document.getElementById(id)
         this.id = id
@@ -86,6 +87,11 @@ var P = Patchwork = {
         default:
             return null;
         }
+    },
+    log: function () {
+        if (console && P.debug) {
+            console.log.apply(console, arguments);
+        }
     }
 }
 
@@ -119,6 +125,7 @@ if (jQuery) {
                     var node = P.nodes[nodeId],
                         patches = msg.content.data
                     node.applyPatch(patches)
+                    P.log("received patches", patches)
                 });
             });
         }
