@@ -38,7 +38,7 @@ promote_rule(::Type{Node}, ::Type{String}) = Node
 
 # Abstract out the word "Persistent"
 typealias NodeVector   PersistentVector{Node}
-typealias Attrs PersistentHashMap
+typealias Attrs PersistentHashMap{Any, Any}
 
 const EmptyNode = NodeVector([])
 
@@ -54,8 +54,14 @@ convert(::Type{NodeVector}, x::NodeVector) =
 convert(::Type{NodeVector}, x::String) =
     NodeVector([text(x)])
 
-convert(::Type{Attrs}, x) =
-    Attrs(x)
+convert(::Type{Attrs}, x::PersistentHashMap) = x
+function convert(::Type{Attrs}, x)
+    a = Attrs()
+    for (k, v) in x
+        a = assoc(a, k, v)
+    end
+    a
+end
 
 # A DOM Element
 immutable Elem{ns, tag} <: Node
