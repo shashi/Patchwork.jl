@@ -31,7 +31,7 @@ Elem(:div, [
     Elem(:p, "How are you doing today?")])
 ```
 
-The `Patchwork.HTML5` module gives you helper functions which are named after the HTML elements, allowing you to create nodes in a concise DSL-esque way. There is similarly also Patchwork.SVG.
+The `Patchwork.HTML5` module gives you helper functions which are named after the HTML elements, allowing you to create nodes in a concise DSL-esque way.
 
 ```julia
 div(
@@ -39,7 +39,7 @@ div(
     p("How are you doing today?"))
 ```
 
-`Elem`s objects are immutable and have the `children` and `attributes` fields that are immutable vector and immutable hash map respectively. There are some operators which you can use to add properties or elements to another without explicitly constructing a new `Elem`.
+`Elem` objects are immutable, they have `children` field which is an immutable vector and an `attributes` field which is an immutable hash map. There are some operators which you can use to add properties or elements to another without explicitly constructing a new `Elem`.
 
 The `&` operator can set attributes
 ```julia
@@ -49,7 +49,16 @@ div_with_class = div("This div's class can change") & [:className => "shiny"]
 The `<<` operator can append an element to the end of another.
 
 ```julia
-h1_and_p = div(h1("Hello, World!") << p("How are you doing today?"))
+h1_and_p = div(h1("Hello, World!")) << p("How are you doing today?")
+```
+
+Similar to the `Patchwork.HTML` there is also a `Patchwork.SVG` module which provides helper functions to construct and embed SVG documents.
+
+Here is a `@manipulate` statement waiting to be played with!
+```julia
+@manipulate for r=1:100, cx = 1:500, cy=1:400, color=["orange", "green", "blue"]
+    svg(circle(cx=cx, cy=cy, r=r, fill=color), width=500, height=500)
+end
 ```
 
 ## Diff computation
