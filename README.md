@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/shashi/Patchwork.jl.svg?branch=master)](https://travis-ci.org/shashi/Patchwork.jl)
 
-A library for [DOM](http://www.w3.org/TR/WD-DOM/introduction.html) representation in Julia supporting [element creation](#creating-elements), [diff computation](#diff-computation) and [browser-side patching](#javascript-setup-and-patching) for efficient re-rendering in interactive browser-based interfaces.
+A library for representing the [DOM](http://www.w3.org/TR/WD-DOM/introduction.html) in Julia. It supports [element creation](#creating-elements), [diff computation](#diff-computation) and [browser-side patching](#javascript-setup-and-patching) for efficient re-rendering.
 
 ## Creating Elements
 
@@ -20,11 +20,11 @@ You can attach any property (e.g. `className`, `style`, `height`, `width`) that 
 
 ```julia
 # E.g.
-Elem(:h1, "Hello, World!", style=[:color => :white, :backgroundColor => :black])
+Elem(:h1, "Hello, World!", className="welcome", style=[:color => :white, :backgroundColor => :black])
 ```
-creates a `h1` with white text on a black background.
+This creates a `h1` with white text on a black background.
 
-You can nest elements inside another
+You can of course nest elements inside another
 ```julia
 Elem(:div, [
     Elem(:h1, "Hello, World!"),
@@ -39,7 +39,7 @@ div(
     p("How are you doing today?"))
 ```
 
-`Elem` objects are immutable, they have `children` field which is an immutable vector and an `attributes` field which is an immutable hash map. There are some operators which you can use to add properties or elements to another without explicitly constructing a new `Elem`.
+`Elem` objects are immutable, they have a `children` field which is an immutable vector and an `attributes` field which is an immutable hash map. There are some infix operators defined for `Elem`.
 
 The `&` operator can set attributes
 ```julia
@@ -56,6 +56,7 @@ Similar to the `Patchwork.HTML` there is also a `Patchwork.SVG` module which pro
 
 Here is a `@manipulate` statement waiting to be played with!
 ```julia
+using Interact, Patchwork.SVG
 @manipulate for r=1:100, cx = 1:500, cy=1:400, color=["orange", "green", "blue"]
     svg(circle(cx=cx, cy=cy, r=r, fill=color), width=500, height=500)
 end
@@ -63,15 +64,15 @@ end
 
 ## Diff computation
 
-It is possible to compute the difference between two elements. This is done with the function `diff`.
+Patchwork provides a `diff` method to compute the difference between two elements.
 
 ```julia
 # E.g.
 patch = diff(left::Elem, right::Elem)
 ```
-returns a "patch". A patch is a `Dict` which maps node indices to a list of patches on that node. (a node is either an `Elem` or a `Text`). The node index is a number representing the position of the node in a depth-first ordering starting from the `left` node itself whose index is 0.
+The above call to diff returns a "patch". A patch is a `Dict` which maps node indices to a list of patches on that node. The node index is a number representing the position of the node in a depth-first ordering starting at the root node (here `left`), whose index is 0.
 
-Since `Elem`s are based on immutable datastructures, referential equality suffices to show that two subtrees or `children` or `attributes` are the same. Hence the more structure two nodes share, the faster the diffing.
+`Elem`s are based on immutable datastructures. `&` and `<<` operations return new `Elem`s, which may share structure with the operands. The more structure two nodes share, the faster the diffing.
 
 For example, if you have a big `Elem`, say `averybigelem`, the running time of the following diff call
 
@@ -89,11 +90,11 @@ Patchwork has a javascript "runtime" in `runtime/build.js` that needs to be incl
 <script src="/path/to/build.js"></script>
 ```
 
-This is automatically done for you when using Patchwork from IJulia.
+This is automatically done for you if you are using Patchwork from IJulia.
 
-Patchwork defines `writemime(io::IO, ::MIME"text/html", ::Elem)` method which can use this runtime to display nodes and/or apply patches to nodes that are already displayed.
+Patchwork defines the `writemime(io::IO, ::MIME"text/html", ::Elem)` method which can use this runtime to display nodes and/or apply patches to nodes that are already displayed.
 
-At a lower level, the runtime exposes the window.Patchwork object, which can be used to render nodes from their JSON representations and patch them.
+At a lower level, the runtime exposes the `window.Patchwork` object, which can be used to render nodes from their JSON representations and also apply patches.
 
 ```js
 // E.g.
@@ -110,9 +111,9 @@ node.applyPatch(patchJSON)
 
 ## Usage in IJulia
 
-When you load Patchwork in IJulia, the runtime is setup automatically for you. If the result of executing a cell is an `Elem` object, it gets rendered in the cell's output. `display(::Elem)` will work too.
+When you load Patchwork in IJulia, the runtime is setup automatically for you. If the result of executing a cell is an `Elem` object, it gets rendered in the cell's output area. `display(::Elem)` will work too.
 
-When used with [Reactive](http://julialang.org/Reactive.jl), any `Signal{Elem}` values (see [Reactive.Signal](http://julialang.org/Reactive.jl/#signals)) get displayed with their initial value first. Subsequent updates are sent as patches and applied at the front-end.
+When used with [Reactive](http://julialang.org/Reactive.jl) (or Interact), any `Signal{Elem}` values (see [Reactive.Signal](http://julialang.org/Reactive.jl/#signals)) get displayed with its initial value first. Subsequent updates are sent as patches and applied at the front-end.
 
 ## Setup instructions
 
@@ -123,7 +124,6 @@ Pkg.update() # Unless you have Reactive v0.1.9
 Pkg.checkout("IJulia", "master")
 # You might have to restart the kernel if you ran this from IJulia
 Pkg.clone("git://github.com/shashi/Patchwork.jl")
-Pkg.checkout("FunctionalCollections", "master")
 
 ```
 ## Development
@@ -140,5 +140,5 @@ make
 
 ## Thanks
 
-This package is largely based on Matt Esch's excellent [virtual-dom](https://github.com/Matt-Esch/virtual-dom) and [vtree](https://github.com/Matt-Esch/vtree) JavaScript modules. Patchwork's JS runtime makes use of and extends these.
+This package is largely based on @Matt-Esch's excellent [virtual-dom](https://github.com/Matt-Esch/virtual-dom) and [vtree](https://github.com/Matt-Esch/vtree) JavaScript modules. Patchwork's JS runtime makes use of and extends these.
 
