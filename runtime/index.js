@@ -38,12 +38,17 @@ var P = Patchwork = {
     makeVNode: function (jlNode) {
         if ('text' in jlNode) return new VText(jlNode.text);
         if (jlNode.namespace === "svg") {
-            return svg(jlNode.tagName, _.extend(jlNode.properties, {key: jlNode.key}),
+            return svg(jlNode.tagName, jlNode.properties,
                          _.map(jlNode.children, Patchwork.makeVNode))
         } else {
+            var key = null
+            if (jlNode.properties && jlNode.properties.key) {
+                key = jlNode.properties.key
+                delete jlNode.properties.key
+            }
             return new VNode(jlNode.tagName, jlNode.properties,
                              _.map(jlNode.children, Patchwork.makeVNode),
-                             jlNode.key, Patchwork.NAMESPACES[jlNode.namespace]);
+                             key, Patchwork.NAMESPACES[jlNode.namespace]);
         }
     },
     makeVPatches: function (root, jlPatches) {

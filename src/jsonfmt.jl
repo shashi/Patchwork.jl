@@ -2,7 +2,6 @@ jsonfmt(x::Text) = [:text => x.text]
 jsonfmt{ns, tag}(x::Elem{ns, tag}) =
     [ :namespace => ns
     , :tagName => tag
-    , :key => x.key
     , :properties => x.attributes
     , :children => [jsonfmt(c) for c in x.children]
     ]
