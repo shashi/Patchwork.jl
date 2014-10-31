@@ -6,19 +6,17 @@ function make_elems{ns}(variant::DocVariant{ns})
     push!(contents.args, exports)
     for tag in variant.elements
         push!(contents.args, quote
-            $tag(content; _key::MaybeKey=nothing, kwargs...) =
+            $tag(content; kwargs...) =
                 Elem($(string(ns)),
                      $(string(tag)),
                      kwargs,
-                     content,
-                     _key)
+                     content)
 
-            $tag(content...; _key::MaybeKey=nothing, kwargs...) =
+            $tag(content...; kwargs...) =
                 Elem($(string(ns)),
                      $(string(tag)),
                      kwargs,
-                     content,
-                     _key)
+                     content)
 
         end)
     end

@@ -66,13 +66,12 @@ end
 # A DOM Element
 immutable Elem{ns, tag} <: Node
     count::Int
-    key::MaybeKey
     attributes::Attrs
     children::NodeVector
 
-    function Elem(key, attributes, children)
+    function Elem(attributes, children)
         childvec = convert(NodeVector, children)
-        new(count(childvec), key,
+        new(count(childvec),
             convert(Attrs, attributes),
             childvec)
     end
@@ -84,7 +83,7 @@ count(t::Text) = 0
 count(el::Elem) = el.count
 count(v::NodeVector) = Int[_count(x) for x in v] |> sum
 
-key(n::Elem) = n.key
+key(n::Elem) = get(n.attributes, :key, nothing)
 key(n::Text) = nothing
 
 # A document type
@@ -93,14 +92,14 @@ immutable DocVariant{ns}
 end
 
 # constructors
-Elem(ns, name, attrs, children, _key::MaybeKey=nothing) =
-    Elem{symbol(ns) , symbol(name)}(_key, attrs, children)
+Elem(ns, name, attrs, children) =
+    Elem{symbol(ns) , symbol(name)}(attrs, children)
 
-Elem(ns, name, children=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
-    Elem(ns, name, kwargs, children, _key)
+Elem(ns, name, children=EmptyNode; kwargs...) =
+    Elem(ns, name, kwargs, children)
 
-Elem(name, children=EmptyNode; _key::MaybeKey=nothing, kwargs...) =
-    Elem(:xhtml, name, kwargs, children, _key)
+Elem(name, children=EmptyNode; kwargs...) =
+    Elem(:xhtml, name, kwargs, children)
 
 isequal{ns,name}(a::Elem{ns,name}, b::Elem{ns,name}) =
     a === b || (isequal(a.attributes, b.attributes) &&
@@ -115,14 +114,14 @@ isequal(a::Elem, b::Elem) = false
 
 # Combining elements
 (<<){ns, tag}(a::Elem{ns, tag}, b::AbstractArray) =
-    Elem{ns, tag}(key(a), a.attributes, append(a.children, b))
+    Elem{ns, tag}(a.attributes, append(a.children, b))
 (<<){ns, tag}(a::Elem{ns, tag}, b::Node) =
-    Elem{ns, tag}(key(a), a.attributes, push(a.children, b))
+    Elem{ns, tag}(a.attributes, push(a.children, b))
 
 # Manipulating attributes
 attrs(; kwargs...) = kwargs
 (&){ns, name}(a::Elem{ns, name}, itr) =
-    Elem{ns, name}(key(a), merge(a.attributes, itr), a.children)
+    Elem{ns, name}(merge(a.attributes, itr), a.children)
 
 include("variants.jl")
 include("combinators.jl")
