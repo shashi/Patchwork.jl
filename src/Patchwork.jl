@@ -13,6 +13,8 @@ import Base:
 
 export Node,
        Elem,
+       attributes,
+       children,
        text,
        NodeVector,
        Attrs,
@@ -38,7 +40,7 @@ promote_rule(::Type{Node}, ::Type{String}) = Node
 
 # Abstract out the word "Persistent"
 typealias NodeVector   PersistentVector{Node}
-typealias Attrs PersistentHashMap{Any, Any}
+typealias Attrs Dict{Any, Any}
 
 const EmptyNode = NodeVector([])
 
@@ -54,36 +56,39 @@ convert(::Type{NodeVector}, x::NodeVector) =
 convert(::Type{NodeVector}, x::String) =
     NodeVector([text(x)])
 
-convert(::Type{Attrs}, x::PersistentHashMap) = x
-function convert(::Type{Attrs}, x)
-    a = Attrs()
-    for (k, v) in x
-        a = assoc(a, k, v)
-    end
-    a
-end
+convert(::Type{Attrs}, x::AbstractArray) = Attrs(x)
 
 # A DOM Element
 immutable Elem{ns, tag} <: Node
     count::Int
-    attributes::Attrs
     children::NodeVector
+    attributes::Attrs
 
     function Elem(attributes, children)
         childvec = convert(NodeVector, children)
-        new(count(childvec),
-            convert(Attrs, attributes),
-            childvec)
+        if isempty(attributes)
+            new(count(childvec), childvec)
+        else
+            new(count(childvec), childvec, attributes)
+        end
+    end
+
+    function Elem()
+        n = new(0, EmptyNode)
     end
 end
 
+hasattributes(el::Elem) = isdefined(el, :attributes)
+attributes(el::Elem) = isdefined(el, :attributes) ? el.attributes : Attrs()
+children(el::Elem) = el.children
+
 _count(t::Text) = 1
-_count(el::Elem) = el.count
+_count(el::Elem) = el.count + 1
 count(t::Text) = 0
 count(el::Elem) = el.count
 count(v::NodeVector) = Int[_count(x) for x in v] |> sum
 
-key(n::Elem) = get(n.attributes, :key, nothing)
+key(n::Elem) = hasattributes(n) ? get(n.attributes, :key, nothing) : nothing
 key(n::Text) = nothing
 
 # A document type
@@ -92,18 +97,20 @@ immutable DocVariant{ns}
 end
 
 # constructors
+Elem(ns::Symbol, name::Symbol) = Elem{ns, name}()
+
 Elem(ns, name, attrs, children) =
     Elem{symbol(ns) , symbol(name)}(attrs, children)
 
-Elem(ns, name, children=EmptyNode; kwargs...) =
+Elem(ns::Symbol, name::Symbol, children=EmptyNode; kwargs...) =
     Elem(ns, name, kwargs, children)
 
 Elem(name, children=EmptyNode; kwargs...) =
     Elem(:xhtml, name, kwargs, children)
 
 isequal{ns,name}(a::Elem{ns,name}, b::Elem{ns,name}) =
-    a === b || (isequal(a.attributes, b.attributes) &&
-                sequal(a.children, b.children))
+    a === b || (isequal(attributes(a), attributes(b)) &&
+                sequal(children(a), children(b)))
 isequal(a::Elem, b::Elem) = false
 
 ==(a::Text, b::Text) = a.text == b.text
@@ -114,14 +121,14 @@ isequal(a::Elem, b::Elem) = false
 
 # Combining elements
 (<<){ns, tag}(a::Elem{ns, tag}, b::AbstractArray) =
-    Elem{ns, tag}(a.attributes, append(a.children, b))
+    Elem{ns, tag}(hasattributes(a) ? a.attributes : [], append(a.children, b))
 (<<){ns, tag}(a::Elem{ns, tag}, b::Node) =
-    Elem{ns, tag}(a.attributes, push(a.children, b))
+    Elem{ns, tag}(hasattributes(a) ? a.attributes : [], push(a.children, b))
 
 # Manipulating attributes
 attrs(; kwargs...) = kwargs
 (&){ns, name}(a::Elem{ns, name}, itr) =
-    Elem{ns, name}(merge(a.attributes, itr), a.children)
+    Elem{ns, name}(hasattributes(a) ? merge(a.attributes, itr) : itr , children(a))
 
 include("variants.jl")
 include("combinators.jl")

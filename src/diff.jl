@@ -93,7 +93,7 @@ function diff!{ns, tag}(a::Elem{ns, tag}, b::Elem{ns, tag}, index, patches)
 
     patch = get(patches, index, Patch[])
 
-    attrpatch = diff(a.attributes, b.attributes)
+    attrpatch = diff(attributes(a), attributes(b))
     if !is(attrpatch, nothing)
         patch = push!(patch, DictDiff(attrpatch))
     end
