@@ -4,7 +4,12 @@ load_js_runtime() =
     display(MIME("text/html"), "<script>$(
         readall(open(joinpath(Pkg.dir("Patchwork"), "runtime", "build.js")))
     )</script>")
-load_js_runtime()
+
+try
+    load_js_runtime()
+catch
+end
+
 
 pwid() = replace(string(gensym("pwid")), "#", "")
 
