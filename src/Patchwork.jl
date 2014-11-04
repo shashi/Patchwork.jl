@@ -1,6 +1,7 @@
 module Patchwork
 
 using FunctionalCollections
+using Compat
 
 import Base:
        convert,
@@ -79,6 +80,7 @@ immutable Elem{ns, tag} <: Node
 end
 
 hasattributes(el::Elem) = isdefined(el, :attributes)
+haschildren(el::Elem) = !isempty(el.children)
 attributes(el::Elem) = isdefined(el, :attributes) ? el.attributes : Attrs()
 children(el::Elem) = el.children
 

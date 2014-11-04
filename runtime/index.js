@@ -18,7 +18,7 @@ var P = Patchwork = {
         this.id = id
         if (jlNode) {
             // Note: makes this.root
-            var vnode = Patchwork.makeVNode(jlNode)
+            var vnode = P.makeVNode(jlNode)
             P.log("makeVNode: ", jlNode, "=>", vnode)
             this.mount(vnode, el)
         }
@@ -27,7 +27,8 @@ var P = Patchwork = {
     NAMESPACES: {
         "xhtml": null,
         "svg": "http://www.w3.org/2000/svg",
-        null: null
+        null: null,
+        undefined: null
     },
     refDiff: function (a, b, p) {
         var a = P.makeVNode(a)
@@ -36,19 +37,29 @@ var P = Patchwork = {
         console.log(p, diff(a, b));
     },
     makeVNode: function (jlNode) {
-        if ('text' in jlNode) return new VText(jlNode.text);
-        if (jlNode.namespace === "svg") {
-            return svg(jlNode.tagName, jlNode.properties,
-                         _.map(jlNode.children, Patchwork.makeVNode))
+        if ('txt' in jlNode) return new VText(jlNode.txt);
+        var children = [],
+            props = jlNode.p || {}
+
+        if (jlNode.c) {
+            for (var i = 0, l = jlNode.c.length; i < l; i++) {
+                children[i] = P.makeVNode(jlNode.c[i])
+            }
+        }
+
+        if (jlNode.n === "svg") {
+            return svg(jlNode.t, props, children)
         } else {
             var key = null
-            if (jlNode.properties && jlNode.properties.key) {
-                key = jlNode.properties.key
-                delete jlNode.properties.key
+            if (props && props.key) {
+                key = props.key
+                delete props.key
             }
-            return new VNode(jlNode.tagName, jlNode.properties,
-                             _.map(jlNode.children, Patchwork.makeVNode),
-                             key, Patchwork.NAMESPACES[jlNode.namespace]);
+            return new VNode(jlNode.t,
+                             props,
+                             children,
+                             key,
+                             P.NAMESPACES[jlNode.n]);
         }
     },
     makeVPatches: function (root, jlPatches) {

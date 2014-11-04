@@ -56,7 +56,7 @@ function writemime{ns, name}(io::IO, ::MIME"text/html", x::Signal{Elem{ns, name}
               """<script>new Patchwork.Node("$id", $(json(jsonfmt(value(x)))));</script>""",
               """</div>""")
 
-    comm = Comm(:PatchStream; data=[:pwid => id])
+    comm = Comm(:PatchStream; data=@compat Dict(:pwid => id))
     # lift patch stream
     lift((d) -> send_patch(comm, d), diff(x))
 end

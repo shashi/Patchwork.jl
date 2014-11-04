@@ -1,5 +1,6 @@
 using Patchwork, Patchwork.HTML5
 using FactCheck
+using Compat
 #using Match
 using Base.Test
 
@@ -56,20 +57,23 @@ facts("Testing Diffs") do
     context("things that should return empty patches") do
         e1 = p("a")
         e2 = p("b")
+        a = @compat Dict(:x => 1)
+        b = @compat Dict(:x => @compat Dict(:y => 1))
         @fact diff(e1, e1) => isempty
         @fact diff(p(e1), p(e1)) => isempty
         @fact diff(e1, p("a")) => isempty
         @fact diff(p(e1, e2), p(e1, e2)) => isempty
         @fact diff(p(p("a"), e2), p(e1, p("b"))) => isempty
-        @fact diff(e1 & [:x => 1], p("a") & [:x => 1]) => isempty
-        @fact diff(e1 & [:x => [:y => 1]], p("a") & [:x => [:y => 1]]) => isempty
+        @fact diff(e1 & a, p("a") & a) => isempty
+        @fact diff(e1 & b, p("a") & b) => isempty
     end
 
     context("testing Overwrite") do
         e1 = p("a")
         e2 = p("b")
+        a = @compat Dict(1=>[Overwrite(Text("b"))])
         @fact Text("a") => Text("a")
-        @fact diff(e1, e2) => sameas([1=>[Overwrite(Text("b"))]])
-        @fact diff(e1, e2) => sameas([1=>[Overwrite(Text("b"))]])
+        @fact diff(e1, e2) => sameas(a)
+        @fact diff(e1, e2) => sameas(a)
     end
 end
