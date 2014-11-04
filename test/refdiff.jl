@@ -1,12 +1,14 @@
 using Patchwork
-import Patchwork: jsonfmt, refDiff
+import Patchwork: jsonfmt, refdiff
 
 # Compare diffs produced by
 # Patchwork and virtual-dom
+# This prints stuff in the JS console as well
+
 macro compare(a, b)
     hint = string("<> ", a, " -> ", b)
     quote
-        refDiff($(esc(a)), $(esc(b)), label=$hint)
+        refdiff($(esc(a)), $(esc(b)), label=$hint)
         println($hint)
         println(jsonfmt(diff($(esc(a)), $(esc(b)))))
     end

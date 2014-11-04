@@ -1,45 +1,23 @@
-abstract Writer
+import JSON: json
 
-immutable MinifiedHTML5 <: Writer end
-immutable PrettyHTML5 <: Writer end
-immutable MinifiedXML <: Writer end
-immutable PrettyXML <: Writer end
+load_js_runtime() =
+    display(MIME("text/html"), "<script>$(
+        readall(open(joinpath(Pkg.dir("Patchwork"), "runtime", "build.js")))
+    )</script>")
+load_js_runtime()
 
-function tohtml(t)
-    buf = IOBuffer()
-    writehtml(buf, t)
-    takebuf_string(buf)
+pwid() = replace(string(gensym("pwid")), "#", "")
+
+function writemime(io::IO, ::MIME"text/html", x::Node)
+    id = pwid()
+    write(io, """<div id="$id">""",
+              """<script>new Patchwork.Node("$id", $(json(jsonfmt(x))));</script>""",
+              """</div>""")
 end
 
-# Write HTML
-writehtml(io::IO, t::Text) =
-    write(io, t.text)
-
-function writehtml(io::IO, attr::(Any, Any))
-    k, v = attr
-    write(io, " ", k, "=\"", string(v), "\"")
+function refdiff(a, b; label="")
+    # Inspect a reference (vtree) diff of two nodes
+    display(MIME("text/html"), string("<script>
+        console.log('", label, "', Patchwork.refDiff(", json(jsonfmt(a)), ",", json(jsonfmt(b)), ",", json(jsonfmt(diff(a,b))),"));
+    </script>"))
 end
-
-#function writehtml(io::IO, doc::Document)
-#    write(io, doc.doctype, "\n")
-#    writehtml(io, elem(:html, ElemList(doc.head, doc.body)))
-#end
-
-function writehtml{ns, tag}(io::IO, el::Elem{ns, tag})
-    write(io, "<", tag)
-    for (k, v) in el.attributes
-        writehtml(io, (k, v))
-    end
-    write(io, ">")
-    writehtml(io, el.children)
-    write(io, "</", tag, ">")
-end
-
-function writehtml(io::IO, el::NodeVector)
-    for n in el
-        writehtml(io, n)
-    end
-end
-
-writemime(io::IO, m::MIME"text/html", x::Node) =
-    writehtml(io, x)

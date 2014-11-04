@@ -1,3 +1,5 @@
+# Concise JSON representations
+
 jsonfmt(x::Text) = [:txt => x.text]
 function jsonfmt{ns, tag}(x::Elem{ns, tag})
     dict = @compat Dict{Any, Any}('t' => tag)

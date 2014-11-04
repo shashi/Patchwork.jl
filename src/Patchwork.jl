@@ -135,9 +135,11 @@ attrs(; kwargs...) = kwargs
 
 include("variants.jl")
 include("combinators.jl")
-include("writers.jl")
 include("diff.jl")
 include("parse.jl")
+
+include("jsonfmt.jl")
+include("writers.jl")
 
 if isdefined(Main, :IJulia)
     include("ijulia.jl")
