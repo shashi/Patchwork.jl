@@ -16,6 +16,7 @@ export Node,
        Elem,
        attributes,
        children,
+       Text,
        text,
        NodeVector,
        Attrs,
@@ -136,6 +137,7 @@ include("variants.jl")
 include("combinators.jl")
 include("writers.jl")
 include("diff.jl")
+include("parse.jl")
 
 if isdefined(Main, :IJulia)
     include("ijulia.jl")
