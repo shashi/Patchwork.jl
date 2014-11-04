@@ -142,20 +142,18 @@ Patchwork.Node.prototype = {
 
 
 // IJulia setup
-if (jQuery) {
+if (IPython && jQuery) {
     $(document).ready(function () {
-        if (IPython) {
-            var commMgr =  IPython.notebook.kernel.comm_manager;
-            commMgr.register_target("PatchStream", function (comm, msg) {
-                var nodeId = msg.content.data.pwid;
-                comm.on_msg(function (msg) {
-                    var node = P.nodes[nodeId],
-                        patches = msg.content.data
-                    node.applyPatch(patches)
-                    P.log("received patches", patches)
-                });
+        var commMgr =  IPython.notebook.kernel.comm_manager;
+        commMgr.register_target("PatchStream", function (comm, msg) {
+            var nodeId = msg.content.data.pwid;
+            comm.on_msg(function (msg) {
+                var node = P.nodes[nodeId],
+                    patches = msg.content.data
+                node.applyPatch(patches)
+                P.log("received patches", patches)
             });
-        }
+        });
     });
 }
 
