@@ -109,6 +109,10 @@ this renders the node represented by `elemJSON` and appends it to a DOM element 
 node.applyPatch(patchJSON)
 ```
 
+## With Compose and Gadfly
+
+There is a work in progress [Compose backend](https://github.com/dcjones/Compose.jl/pull/89) which lets you use Patchwork with Compose and Gadfly.
+
 ## Usage in IJulia
 
 When you load Patchwork in IJulia, the runtime is setup automatically for you. If the result of executing a cell is an `Elem` object, it gets rendered in the cell's output area. `display(::Elem)` will work too.
@@ -140,5 +144,6 @@ make
 
 ## Thanks
 
-This package is largely based on @Matt-Esch's excellent [virtual-dom](https://github.com/Matt-Esch/virtual-dom) and [vtree](https://github.com/Matt-Esch/vtree) JavaScript modules. Patchwork's JS runtime makes use of and extends these.
+* This package is largely based on [Matt-Esch](https://github.com/Matt-Esch)'s excellent [virtual-dom](https://github.com/Matt-Esch/virtual-dom) and [vtree](https://github.com/Matt-Esch/vtree) JavaScript modules. Patchwork's JS runtime makes use of virtual-dom and virtual-hyperscript by [Raynos](https://github.com/Raynos).
+* Thanks to [Evan Czaplicki](https://github.com/evancz) for creating [Elm](http://elm-lang.org/) which inspired me to take the FRP road.
 
