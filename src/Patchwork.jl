@@ -145,4 +145,8 @@ if isdefined(Main, :IJulia)
     include("ijulia.jl")
 end
 
+if Pkg.installed("Compose") >= v"0.0.0"
+    include("compose_backend.jl")
+end
+
 end # module
