@@ -583,7 +583,8 @@ end
 
 
 # writemime for signals
-if Pkg.installed("Reactive") >= v"0.0.0"
+const reactive_version = try Pkg.installed("Reactive") catch v"0.0.0" end
+if reactive_version > v"0.0.0"
 
     import Base: writemime
     import Reactive: Signal
@@ -603,7 +604,9 @@ if Pkg.installed("Reactive") >= v"0.0.0"
             ), c), ctx))
     end
 
-    if Pkg.installed("Gadfly") > v"0.0.0"
+    const gadfly_version = try Pkg.installed("Gadfly") catch v"0.0.0" end
+
+    if gadfly_version > v"0.0.0"
         import Gadfly
 
         if isdefined(Main, :IJulia)
