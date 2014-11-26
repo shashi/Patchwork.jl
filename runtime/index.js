@@ -36,10 +36,27 @@ var P = Patchwork = {
             p = P.makeVPatches(a, p)
         console.log(p, diff(a, b));
     },
+    massageProps: function (props) {
+        if ("attributes" in props) {
+            // we can't send undefined over JSON, so we turn nulls into undefs
+            // so that VDom calls removeAttribute on the DOM node.
+            console.log("attributes ", props.attributes)
+            for (var attr in props.attributes) {
+                if (!props.attributes.hasOwnProperty(attr)) {
+                    continue
+                }
+                if (props.attributes[attr] === null) {
+                console.log("remove ", attr, props.attributes[attr]);
+                    props.attributes[attr] = undefined
+                }
+            }
+        }
+        return props;
+    },
     makeVNode: function (jlNode) {
         if ('txt' in jlNode) return new VText(jlNode.txt);
         var children = [],
-            props = jlNode.p || {}
+            props = P.massageProps(jlNode.p || {})
 
         if (jlNode.c) {
             for (var i = 0, l = jlNode.c.length; i < l; i++) {
@@ -100,6 +117,7 @@ var P = Patchwork = {
         case VPatch.VNODE:
             return vpatch(P.makeVNode(patch));
         case VPatch.PROPS:
+            patch = P.massageProps(patch)
             if (vnode.namespace === P.NAMESPACES["svg"]) {
                 patch = svg('dummy', patch, []).properties
             }

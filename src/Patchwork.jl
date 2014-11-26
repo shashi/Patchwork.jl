@@ -14,12 +14,13 @@ import Base:
 
 export Node,
        Elem,
-       attributes,
+       properties,
        children,
        Text,
        text,
        NodeVector,
-       Attrs,
+       Props,
+       props,
        attrs,
        EmptyNode,
        MaybeKey,
@@ -42,7 +43,7 @@ promote_rule(::Type{Node}, ::Type{String}) = Node
 
 # Abstract out the word "Persistent"
 typealias NodeVector   PersistentVector{Node}
-typealias Attrs Dict{Any, Any}
+typealias Props Dict{Any, Any}
 
 const EmptyNode = NodeVector([])
 
@@ -58,20 +59,20 @@ convert(::Type{NodeVector}, x::NodeVector) =
 convert(::Type{NodeVector}, x::String) =
     NodeVector([text(x)])
 
-convert(::Type{Attrs}, x::AbstractArray) = Attrs(x)
+convert(::Type{Props}, x::AbstractArray) = Props(x)
 
 # A DOM Element
 immutable Elem{ns, tag} <: Node
     count::Int
     children::NodeVector
-    attributes::Attrs
+    properties::Props
 
-    function Elem(attributes, children)
+    function Elem(properties, children)
         childvec = convert(NodeVector, children)
-        if isempty(attributes)
+        if isempty(properties)
             new(count(childvec), childvec)
         else
-            new(count(childvec), childvec, attributes)
+            new(count(childvec), childvec, properties)
         end
     end
 
@@ -80,9 +81,9 @@ immutable Elem{ns, tag} <: Node
     end
 end
 
-hasattributes(el::Elem) = isdefined(el, :attributes)
+hasproperties(el::Elem) = isdefined(el, :properties)
 haschildren(el::Elem) = !isempty(el.children)
-attributes(el::Elem) = isdefined(el, :attributes) ? el.attributes : Attrs()
+properties(el::Elem) = isdefined(el, :properties) ? el.properties : Props()
 children(el::Elem) = el.children
 
 _count(t::Text) = 1
@@ -91,7 +92,7 @@ count(t::Text) = 0
 count(el::Elem) = el.count
 count(v::NodeVector) = Int[_count(x) for x in v] |> sum
 
-key(n::Elem) = hasattributes(n) ? get(n.attributes, :key, nothing) : nothing
+key(n::Elem) = hasproperties(n) ? get(n.properties, :key, nothing) : nothing
 key(n::Text) = nothing
 
 # A document type
@@ -102,8 +103,8 @@ end
 # constructors
 Elem(ns::Symbol, name::Symbol) = Elem{ns, name}()
 
-Elem(ns, name, attrs, children) =
-    Elem{symbol(ns) , symbol(name)}(attrs, children)
+Elem(ns, name, props, children) =
+    Elem{symbol(ns) , symbol(name)}(props, children)
 
 Elem(ns::Symbol, name::Symbol, children=EmptyNode; kwargs...) =
     Elem(ns, name, kwargs, children)
@@ -112,26 +113,27 @@ Elem(name, children=EmptyNode; kwargs...) =
     Elem(:xhtml, name, kwargs, children)
 
 isequal{ns,name}(a::Elem{ns,name}, b::Elem{ns,name}) =
-    a === b || (isequal(attributes(a), attributes(b)) &&
-                sequal(children(a), children(b)))
+    a === b || (isequal(properties(a), properties(b)) &&
+                isequal(children(a), children(b)))
 isequal(a::Elem, b::Elem) = false
 
 ==(a::Text, b::Text) = a.text == b.text
 =={ns, name}(a::Elem{ns, name}, b::Elem{ns,name}) =
-    a === b || (a.attributes == b.attributes &&
+    a === b || (a.properties == b.properties &&
                 a.children == b.children)
 ==(a::Elem, b::Elem) = false
 
 # Combining elements
 (<<){ns, tag}(a::Elem{ns, tag}, b::AbstractArray) =
-    Elem{ns, tag}(hasattributes(a) ? a.attributes : [], append(a.children, b))
+    Elem{ns, tag}(hasproperties(a) ? a.properties : [], append(a.children, b))
 (<<){ns, tag}(a::Elem{ns, tag}, b::Node) =
-    Elem{ns, tag}(hasattributes(a) ? a.attributes : [], push(a.children, b))
+    Elem{ns, tag}(hasproperties(a) ? a.properties : [], push(a.children, b))
 
-# Manipulating attributes
-attrs(; kwargs...) = kwargs
+attrs(; kwargs...) = @compat Dict(:attributes => Dict(kwargs))
+props(; kwargs...) = kwargs
+
 (&){ns, name}(a::Elem{ns, name}, itr) =
-    Elem{ns, name}(hasattributes(a) ? merge(a.attributes, itr) : itr , children(a))
+    Elem{ns, name}(hasproperties(a) ? recmerge(a.properties, itr) : itr , children(a))
 
 include("variants.jl")
 include("combinators.jl")

@@ -93,9 +93,9 @@ function diff!{ns, tag}(a::Elem{ns, tag}, b::Elem{ns, tag}, index, patches)
 
     patch = get(patches, index, Patch[])
 
-    attrpatch = diff(attributes(a), attributes(b))
-    if !is(attrpatch, nothing)
-        patch = push!(patch, DictDiff(attrpatch))
+    proppatch = diff(properties(a), properties(b))
+    if !is(proppatch, nothing)
+        patch = push!(patch, DictDiff(proppatch))
     end
 
     diff!(a.children, b.children, index, patches, parentpatch=patch)

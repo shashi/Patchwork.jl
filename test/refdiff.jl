@@ -1,3 +1,4 @@
+using Compat
 using Patchwork
 import Patchwork: jsonfmt, refdiff
 
@@ -15,7 +16,7 @@ macro compare(a, b)
 end
 
 a = em("x")
-b = a & attrs(className="cls")
+b = a & @compat Dict(:className => "cls")
 
 p,q,r = li("p"), li("q"), li("r")
 
@@ -25,7 +26,7 @@ p,q,r = li("p"), li("q"), li("r")
 @compare span(a, "a") span(a, "b")
 @compare span(a, "a", b) span(a, "a")
 @compare a b
-@compare a & attrs(style=[:color => "red"]) a & attrs(style=[:color => "blue"])
+@compare a & @compat Dict(:style => [:color => "red"]) a & Dict(:style => [:color => "blue"])
 @compare b a
 @compare em(a) em(a)
 @compare em(a) em(b)

@@ -6,8 +6,8 @@ function jsonfmt{ns, tag}(x::Elem{ns, tag})
     if ns !== :xhtml
         dict['n'] = ns
     end
-    if hasattributes(x)
-        dict['p'] = attributes(x)
+    if hasproperties(x)
+        dict['p'] = properties(x)
     end
     if haschildren(x)
         dict['c'] = [jsonfmt(c) for c in x.children]
