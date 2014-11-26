@@ -129,6 +129,19 @@ isequal(a::Elem, b::Elem) = false
 (<<){ns, tag}(a::Elem{ns, tag}, b::Node) =
     Elem{ns, tag}(hasproperties(a) ? a.properties : [], push(a.children, b))
 
+# Manipulating properties
+function recmerge(a, b)
+    c = Dict{Any, Any}(a)
+    for (k, v) in b
+        if isa(v, Associative) && haskey(a, k) && isa(a[k], Associative)
+            c[k] = recmerge(a[k], v)
+        else
+            c[k] = b[k]
+        end
+    end
+    c
+end
+
 attrs(; kwargs...) = @compat Dict(:attributes => Dict(kwargs))
 props(; kwargs...) = kwargs
 
