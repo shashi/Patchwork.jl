@@ -160,9 +160,4 @@ if isdefined(Main, :IJulia)
     include("ijulia.jl")
 end
 
-const compose_version = try Pkg.installed("Compose") catch v"0.0.0" end
-if compose_version > v"0.0.0"
-    include("compose_backend.jl")
-end
-
 end # module
