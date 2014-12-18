@@ -4,6 +4,13 @@
 
 A library for representing the [DOM](http://www.w3.org/TR/WD-DOM/introduction.html) in Julia. It supports [element creation](#creating-elements), [diff computation](#diff-computation) and [browser-side patching](#javascript-setup-and-patching) for efficient re-rendering.
 
+## Setup
+
+From the REPL, run
+```julia
+Pkg.add("Patchwork")
+```
+
 ## Creating Elements
 
 The `Elem` constructor can be used to create an element.
@@ -111,7 +118,7 @@ node.applyPatch(patchJSON)
 
 ## With Compose and Gadfly
 
-There is a work in progress [Compose backend](https://github.com/dcjones/Compose.jl/pull/89) which lets you use Patchwork with Compose and Gadfly.
+If Patchwork is installed, interactive plots or Compose graphics automatically use Patchwork to efficiently render them into SVG Virtual DOM. Any updates to the plot get turned into patches, sent over to the browser and applied to the plot.
 
 ## Usage in IJulia
 
@@ -119,17 +126,6 @@ When you load Patchwork in IJulia, the runtime is setup automatically for you. I
 
 When used with [Reactive](http://julialang.org/Reactive.jl) (or Interact), any `Signal{Elem}` values (see [Reactive.Signal](http://julialang.org/Reactive.jl/#signals)) get displayed with its initial value first. Subsequent updates are sent as patches and applied at the front-end.
 
-## Setup instructions
-
-I am working on making this as simple as `Pkg.add("Patchwork")` but until then, you will need to take the following steps:
-
-```julia
-Pkg.update() # Unless you have Reactive v0.1.9
-Pkg.checkout("IJulia", "master")
-# You might have to restart the kernel if you ran this from IJulia
-Pkg.clone("git://github.com/shashi/Patchwork.jl")
-
-```
 ## Development
 
 You will need a recent `nodejs` and `npm` installed to hack on the JavaScript part of this package.
