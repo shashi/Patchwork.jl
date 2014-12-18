@@ -1,6 +1,6 @@
 # Concise JSON representations
 
-jsonfmt(x::Text) = [:txt => x.text]
+jsonfmt(x::Text) = @compat Dict(:txt => x.text)
 function jsonfmt{ns, tag}(x::Elem{ns, tag})
     dict = @compat Dict{Any, Any}('t' => tag)
     if ns !== :xhtml
