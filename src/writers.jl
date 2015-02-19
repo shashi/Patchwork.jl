@@ -1,8 +1,11 @@
 import JSON: json
 
+js_runtime() =
+    readall(open(joinpath(Pkg.dir("Patchwork"), "runtime", "build.js")))
+
 load_js_runtime() =
     display(MIME("text/html"), "<script>$(
-        readall(open(joinpath(Pkg.dir("Patchwork"), "runtime", "build.js")))
+        js_runtime()
     )</script>")
 
 try
@@ -12,6 +15,9 @@ end
 
 
 pwid() = replace(string(gensym("pwid")), "#", "")
+
+writemime(io::IO, ::MIME"application/json", x::Union(Node, Patch)) =
+    write(io, json(jsonfmt(x)))
 
 function writemime(io::IO, ::MIME"text/html", x::Node)
     id = pwid()

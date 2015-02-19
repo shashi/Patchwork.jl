@@ -27,8 +27,8 @@ const VPATCH_INSERT = 6
 const VPATCH_REMOVE = 7
 # const VPATCH_THUNK = 8
 
+jsonfmt{T <: Elem}(p::Overwrite{T}) = @compat Dict(VPATCH_VNODE =>jsonfmt(p.b))
 jsonfmt(p::Overwrite{Text}) = @compat Dict(VPATCH_VTEXT => p.b.text)
-jsonfmt(p::Overwrite{Elem}) = @compat Dict(VPATCH_VNODE =>jsonfmt(p.b))
 jsonfmt(p::DictDiff)        = @compat Dict(VPATCH_PROPS => p.updates)
 jsonfmt(p::Reorder)         = @compat Dict(VPATCH_ORDER => p.moves)
 jsonfmt(p::Insert)          = @compat Dict(VPATCH_INSERT => jsonfmt(p.b))
