@@ -13,8 +13,10 @@ var isVPatch = require('./is-vpatch');
 var P = Patchwork = {
     nodes: {},
     debug: false,
-    Node: function (id, jlNode) {
-        el = document.getElementById(id)
+    Node: function (id, jlNode, el) {
+        if (typeof(el) === "undefined") {
+            el = document.getElementById(id)
+        }
         this.id = id
         if (jlNode) {
             // Note: makes this.root
