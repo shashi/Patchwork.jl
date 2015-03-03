@@ -30,6 +30,9 @@ module HTML5
 using Patchwork
 
 import Base.div
+import Base.select
+import Base.sub
+import Base.base
 
 eval(Patchwork.make_elems(Patchwork.html5))
 
