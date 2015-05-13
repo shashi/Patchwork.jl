@@ -135,6 +135,7 @@ To build the JS files run the following from `runtime/` directory:
 ```sh
 npm install .
 npm install -g browserify
+npm install -g uglifyjs
 make
 ```
 
