@@ -150,8 +150,6 @@ props(; kwargs...) = kwargs
 (&){ns, name}(a::Elem{ns, name}, itr) =
     Elem{ns, name}(hasproperties(a) ? recmerge(a.properties, itr) : itr , children(a))
 
-include("variants.jl")
-include("combinators.jl")
 include("diff.jl")
 include("parse.jl")
 

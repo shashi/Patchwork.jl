@@ -1,7 +1,10 @@
-using Patchwork, Patchwork.HTML5
+using Patchwork
 using FactCheck
 
 import Patchwork: count, Text, Elem
+
+ul(x...) = Elem(:xhtml, :ul, x)
+li(x...) = Elem(:xhtml, :li, x)
 
 facts("Testing Nodes") do
     context("testing counts") do

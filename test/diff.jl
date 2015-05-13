@@ -1,4 +1,4 @@
-using Patchwork, Patchwork.HTML5
+using Patchwork
 using FactCheck
 using Compat
 #using Match
@@ -15,6 +15,8 @@ import Patchwork:
            DictDiff,
            are_equal
 
+# p
+p(x...) = Elem(:xhtml, :p, x)
 
 # Structurally same
 sameas(x, y) = false
