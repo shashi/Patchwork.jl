@@ -42,13 +42,13 @@ var P = Patchwork = {
         if ("attributes" in props) {
             // we can't send undefined over JSON, so we turn nulls into undefs
             // so that VDom calls removeAttribute on the DOM node.
-            console.log("attributes ", props.attributes)
+            //console.log("attributes ", props.attributes)
             for (var attr in props.attributes) {
                 if (!props.attributes.hasOwnProperty(attr)) {
                     continue
                 }
                 if (props.attributes[attr] === null) {
-                console.log("remove ", attr, props.attributes[attr]);
+                //console.log("remove ", attr, props.attributes[attr]);
                     props.attributes[attr] = undefined
                 }
             }
@@ -162,7 +162,7 @@ Patchwork.Node.prototype = {
 
 
 // IJulia setup
-if (IPython && jQuery) {
+if (typeof(window.IPython) !== "undefined" && typeof(window.jQuery) !== "undefined") {
     $(document).ready(function () {
         var commMgr =  IPython.notebook.kernel.comm_manager;
         commMgr.register_target("PatchStream", function (comm, msg) {
