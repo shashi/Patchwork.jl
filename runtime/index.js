@@ -85,6 +85,9 @@ var P = Patchwork = {
         var indices = [];
         var vpatches = {a: root}
         for (var idx in jlPatches) {
+            if (!jlPatches.hasOwnProperty(idx)) {
+                continue
+            }
             indices.push(Number(idx))
         }
         nodes = nodeIndex(root, indices)

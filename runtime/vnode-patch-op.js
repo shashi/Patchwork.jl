@@ -64,8 +64,16 @@ function stringPatch(node, patch) {
 }
 
 function vNodePatch(node, patch) {
-    var up = node.up,
-        idx = up.children.indexOf(node),
+    var up = node.up
+    if (!up) {
+        // copy over the patch to the root node
+        for (key in patch) {
+            if (!patch.hasOwnProperty(key)) continue
+            node[key] = patch[key]
+        }
+        return
+    }
+    var idx = up.children.indexOf(node),
         count = patch.count || 0
 
     if (idx > -1) {
