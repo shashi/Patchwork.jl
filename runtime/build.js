@@ -183,7 +183,7 @@ if (typeof(window.IPython) !== "undefined" && typeof(window.jQuery) !== "undefin
 
 window.Patchwork = Patchwork;
 
-},{"./is-vpatch":2,"./node-index":3,"./patch-vnode":57,"virtual-dom/create-element":5,"virtual-dom/diff":6,"virtual-dom/patch":23,"virtual-hyperscript/svg":47,"vtree/vnode":52,"vtree/vpatch":53,"vtree/vtext":54,"x-is-array":55}],2:[function(require,module,exports){
+},{"./is-vpatch":2,"./node-index":3,"./patch-vnode":58,"virtual-dom/create-element":5,"virtual-dom/diff":6,"virtual-dom/patch":23,"virtual-hyperscript/svg":47,"vtree/vnode":53,"vtree/vpatch":54,"vtree/vtext":55,"x-is-array":56}],2:[function(require,module,exports){
 var version = require("vtree/version")
 
 module.exports = isVirtualPatch
@@ -192,7 +192,7 @@ function isVirtualPatch(x) {
     return x && x.type === "VirtualPatch" && x.version === version
 }
 
-},{"vtree/version":51}],3:[function(require,module,exports){
+},{"vtree/version":52}],3:[function(require,module,exports){
 module.exports = nodeIndex
 
 function nodeIndex(tree, indices, nodes) {
@@ -536,7 +536,7 @@ if (typeof document !== 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":59}],11:[function(require,module,exports){
+},{"min-document":60}],11:[function(require,module,exports){
 var applyProperties = require("./apply-properties")
 
 var isWidget = require("vtree/is-widget")
@@ -784,7 +784,7 @@ function patchIndices(patches) {
     return indices
 }
 
-},{"./dom-index":9,"./patch-op":11,"global/document":10,"x-is-array":55}],13:[function(require,module,exports){
+},{"./dom-index":9,"./patch-op":11,"global/document":10,"x-is-array":56}],13:[function(require,module,exports){
 var isWidget = require("vtree/is-widget")
 
 module.exports = updateWidget
@@ -1147,7 +1147,7 @@ function appendPatch(apply, patch) {
     }
 }
 
-},{"./handle-thunk":15,"./is-thunk":16,"./is-vnode":18,"./is-vtext":19,"./is-widget":20,"./vpatch":22,"is-object":4,"x-is-array":55}],15:[function(require,module,exports){
+},{"./handle-thunk":15,"./is-thunk":16,"./is-vnode":18,"./is-vtext":19,"./is-widget":20,"./vpatch":22,"is-object":4,"x-is-array":56}],15:[function(require,module,exports){
 var isVNode = require("./is-vnode")
 var isVText = require("./is-vtext")
 var isWidget = require("./is-widget")
@@ -1929,17 +1929,19 @@ function isChildren(x) {
 module.exports=require(17)
 },{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-vhook.js":17}],49:[function(require,module,exports){
 module.exports=require(18)
-},{"./version":51,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-vnode.js":18}],50:[function(require,module,exports){
+},{"./version":52,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-vnode.js":18}],50:[function(require,module,exports){
+module.exports=require(19)
+},{"./version":52,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-vtext.js":19}],51:[function(require,module,exports){
 module.exports=require(20)
-},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-widget.js":20}],51:[function(require,module,exports){
+},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-widget.js":20}],52:[function(require,module,exports){
 module.exports=require(21)
-},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/version.js":21}],52:[function(require,module,exports){
+},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/version.js":21}],53:[function(require,module,exports){
 module.exports=require(44)
-},{"./is-vhook":48,"./is-vnode":49,"./is-widget":50,"./version":51,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-hyperscript/node_modules/vtree/vnode.js":44}],53:[function(require,module,exports){
+},{"./is-vhook":48,"./is-vnode":49,"./is-widget":51,"./version":52,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-hyperscript/node_modules/vtree/vnode.js":44}],54:[function(require,module,exports){
 module.exports=require(22)
-},{"./version":51,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/vpatch.js":22}],54:[function(require,module,exports){
+},{"./version":52,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/vpatch.js":22}],55:[function(require,module,exports){
 module.exports=require(45)
-},{"./version":51,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-hyperscript/node_modules/vtree/vtext.js":45}],55:[function(require,module,exports){
+},{"./version":52,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-hyperscript/node_modules/vtree/vtext.js":45}],56:[function(require,module,exports){
 var nativeIsArray = Array.isArray
 var toString = Object.prototype.toString
 
@@ -1949,7 +1951,7 @@ function isArray(obj) {
     return toString.call(obj) === "[object Array]"
 }
 
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 isObject = require('is-object')
 
 module.exports = {reorder: reorder,
@@ -1979,7 +1981,7 @@ function patchObject(obj, patch) {
 }
 
 
-},{"is-object":4}],57:[function(require,module,exports){
+},{"is-object":4}],58:[function(require,module,exports){
 var mutateNode = require("./vnode-patch-op")
 var isArray = require('x-is-array')
 
@@ -2015,8 +2017,9 @@ function linkParents(vNode) {
     }
 }
 
-},{"./vnode-patch-op":58,"x-is-array":55}],58:[function(require,module,exports){
+},{"./vnode-patch-op":59,"x-is-array":56}],59:[function(require,module,exports){
 var isWidget = require("vtree/is-widget")
+var isVText = require("vtree/is-vtext")
 var VPatch = require("vtree/vpatch")
 var patchUtil = require("./patch-util.js")
 
@@ -2062,7 +2065,13 @@ function removeNode(node) {
     var idx = up.children.indexOf(node)
     if (idx > -1) {
         up.children.splice(idx, 1)
-        offsetCount(up, -node.count - 1)
+        var count = 0
+        if (isVText(node)) {
+            count = -1
+        } else {
+            count = -node.count - 1
+        }
+        offsetCount(up, count)
     }
     delete node
 
@@ -2071,7 +2080,13 @@ function removeNode(node) {
 
 function insertNode(node, child) {
     node.children.push(child)
-    offsetCount(node, child.count + 1)
+    var count = 0
+    if (isVText(child)) {
+        count = 1
+    } else {
+        count = child.count + 1
+    }
+    offsetCount(node, count)
     child.up = node
     return node
 }
@@ -2104,6 +2119,6 @@ function vNodePatch(node, patch) {
     return node
 }
 
-},{"./patch-util.js":56,"vtree/is-widget":50,"vtree/vpatch":53}],59:[function(require,module,exports){
+},{"./patch-util.js":57,"vtree/is-vtext":50,"vtree/is-widget":51,"vtree/vpatch":54}],60:[function(require,module,exports){
 
 },{}]},{},[1]);

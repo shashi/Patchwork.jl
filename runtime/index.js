@@ -130,7 +130,7 @@ var P = Patchwork = {
         case VPatch.ORDER:
             return vpatch(patch);
         case VPatch.INSERT:
-            return vpatch(P.makeVNode(patch)); // What about vtext?
+            return vpatch(P.makeVNode(patch));
         case VPatch.REMOVE:
             return vpatch(null);
         default:

@@ -1,4 +1,5 @@
 var isWidget = require("vtree/is-widget")
+var isVText = require("vtree/is-vtext")
 var VPatch = require("vtree/vpatch")
 var patchUtil = require("./patch-util.js")
 
@@ -44,7 +45,13 @@ function removeNode(node) {
     var idx = up.children.indexOf(node)
     if (idx > -1) {
         up.children.splice(idx, 1)
-        offsetCount(up, -node.count - 1)
+        var count = 0
+        if (isVText(node)) {
+            count = -1
+        } else {
+            count = -node.count - 1
+        }
+        offsetCount(up, count)
     }
     delete node
 
@@ -53,7 +60,13 @@ function removeNode(node) {
 
 function insertNode(node, child) {
     node.children.push(child)
-    offsetCount(node, child.count + 1)
+    var count = 0
+    if (isVText(child)) {
+        count = 1
+    } else {
+        count = child.count + 1
+    }
+    offsetCount(node, count)
     child.up = node
     return node
 }
