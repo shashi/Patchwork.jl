@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/shashi/Patchwork.jl.svg?branch=master)](https://travis-ci.org/shashi/Patchwork.jl)
 
-A library for representing the [DOM](http://www.w3.org/TR/WD-DOM/introduction.html) in Julia. It supports [element creation](#creating-elements), [diff computation](#diff-computation) and [browser-side patching](#javascript-setup-and-patching) for efficient re-rendering.
+A library for representing browser [DOM](http://www.w3.org/TR/WD-DOM/introduction.html) in Julia. It supports [element creation](#creating-elements), [diff computation](#diff-computation) and [browser-side patching](#javascript-setup-and-patching).
 
 ## Setup
 
@@ -21,9 +21,9 @@ using Patchwork
 
 Elem(:h1, "Hello, World!")
 ```
-creates an `h1` heading element which reads "Hello, World!"
+creates an `h1` heading element equivalent to the HTML `<h1>Hello, World!</h1>`
 
-You can attach any property (e.g. `className`, `style`, `height`, `width`) that you would like the DOM node to have by passing it as a keyword argument to `Elem`
+You can attach any DOM property (e.g. `className`, `style`, `height`, `width`) that you would like the DOM node to have by passing it as a keyword argument to `Elem`
 
 ```julia
 # E.g.
@@ -38,46 +38,44 @@ Elem(:div, [
     Elem(:p, "How are you doing today?")])
 ```
 
-The `Patchwork.HTML5` module gives you helper functions which are named after the HTML elements, allowing you to create nodes in a concise DSL-esque way.
-
-```julia
-div(
-    h1("Hello, World!", style=[:color=>:green]),
-    p("How are you doing today?"))
-```
-
-`Elem` objects are immutable, they have a `children` field which is an immutable vector and an `attributes` field which is an immutable hash map. There are some infix operators defined for `Elem`.
+`Elem` objects are immutable `children(::Elem)` returns the children of the element as a [persistent vector](https://github.com/JuliaLang/FunctionalCollections.jl#persistentvector) `properties(::Elem)` returns the dictionary of its properties. There are some infix operators defined for `Elem`.
 
 The `&` operator can set attributes
 ```julia
 # E.g.
-div_with_class = div("This div's class can change") & [:className => "shiny"]
+div_with_class = Elem(:div, "This div's class can change") & [:className => "shiny"]
 ```
 The `<<` operator can append an element to the end of another.
 
 ```julia
-h1_and_p = div(h1("Hello, World!")) << p("How are you doing today?")
+h1_and_p = Elem(:div, Elem(:h1, "Hello, World!")) << Elem(:p, "How are you doing today?")
 ```
+SVG graphics are DOM nodes too, and hence can be created in Patchwork.
 
-Similar to the `Patchwork.HTML` there is also a `Patchwork.SVG` module which provides helper functions to construct and embed SVG documents.
-
-Here is a `@manipulate` statement waiting to be played with!
 ```julia
-using Interact, Patchwork.SVG
+    Elem(:svg, Elem(:circle, cx=250, cy=250, r=100, fill="orange"),
+         width=500, height=500)
+```
+draws a circle.
+
+If you are using IJulia, you can use the [Interact.jl](https://github.com/JuliaLang/Interact.jl)'s `@manipulate` statement to draw a circle whose position, radius and color can be changed:
+```julia
+using Interact, Patchwork
 @manipulate for r=1:100, cx = 1:500, cy=1:400, color=["orange", "green", "blue"]
-    svg(circle(cx=cx, cy=cy, r=r, fill=color), width=500, height=500)
+    Elem(:svg, Elem(:circle, cx=cx, cy=cy, r=r, fill=color),
+         width=500, height=500)
 end
 ```
 
 ## Diff computation
 
-Patchwork provides a `diff` method to compute the difference between two elements.
+The `diff` function computes the difference between two elements.
 
 ```julia
 # E.g.
 patch = diff(left::Elem, right::Elem)
 ```
-The above call to diff returns a "patch". A patch is a `Dict` which maps node indices to a list of patches on that node. The node index is a number representing the position of the node in a depth-first ordering starting at the root node (here `left`), whose index is 0.
+Returns a "patch". A patch is a `Dict` which maps node indices to a list of patches on that node. The node index is a number representing the position of the node in a depth-first ordering starting at the root node (here `left`), whose index is 0.
 
 `Elem`s are based on immutable datastructures. `&` and `<<` operations return new `Elem`s, which may share structure with the operands. The more structure two nodes share, the faster the diffing.
 
@@ -99,7 +97,7 @@ Patchwork has a javascript "runtime" in `runtime/build.js` that needs to be incl
 
 This is automatically done for you if you are using Patchwork from IJulia.
 
-Patchwork defines the `writemime(io::IO, ::MIME"text/html", ::Elem)` method which can use this runtime to display nodes and/or apply patches to nodes that are already displayed.
+Patchwork defines the `writemime(io::IO, ::MIME"text/html", ::Elem)` method which can use JavaScript to display nodes and/or apply patches to nodes that are already displayed.
 
 At a lower level, the runtime exposes the `window.Patchwork` object, which can be used to render nodes from their JSON representations and also apply patches.
 
@@ -141,6 +139,6 @@ make
 
 ## Thanks
 
-* This package is largely based on [Matt-Esch](https://github.com/Matt-Esch)'s excellent [virtual-dom](https://github.com/Matt-Esch/virtual-dom) and [vtree](https://github.com/Matt-Esch/vtree) JavaScript modules. Patchwork's JS runtime makes use of virtual-dom and virtual-hyperscript by [Raynos](https://github.com/Raynos).
+* This package is largely based on [Matt-Esch](https://github.com/Matt-Esch)'s excellent [virtual-dom](https://github.com/Matt-Esch/virtual-dom) and [vtree](https://github.com/Matt-Esch/vtree) JavaScript modules. Patchwork's JS makes use of virtual-dom and virtual-hyperscript by [Raynos](https://github.com/Raynos).
 * Thanks to [Evan Czaplicki](https://github.com/evancz) for creating [Elm](http://elm-lang.org/) which inspired me to take the FRP road.
 
