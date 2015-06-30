@@ -127,7 +127,11 @@ function diff(a::Associative, b::Associative)
             end
         else
             # deleted
-            updates[k] = nothing
+            if isa(v, Associative)
+                updates[k] = diff(v, Dict())
+            else
+                updates[k] = nothing
+            end
         end
     end
     for (k, v) in b
