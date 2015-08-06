@@ -14,16 +14,17 @@ var isVPatch = require('./is-vpatch');
 var P = Patchwork = {
     nodes: {},
     debug: false,
-    Node: function (id, jlNode, el) {
+    Node: function (id, jlNode, el, renderOpts) {
         if (typeof(el) === "undefined") {
             el = document.getElementById(id)
         }
         this.id = id
+        this.renderOptions = renderOpts
         if (jlNode) {
             // Note: makes this.root
             var vnode = P.makeVNode(jlNode)
             P.log("makeVNode: ", jlNode, "=>", vnode)
-            this.mount(vnode, el)
+            this.mount(vnode, el, renderOpts)
         }
         P.nodes[id] = this
     },
@@ -131,7 +132,7 @@ var P = Patchwork = {
         case VPatch.ORDER:
             return vpatch(patch);
         case VPatch.INSERT:
-            return vpatch(P.makeVNode(patch)); // What about vtext?
+            return vpatch(P.makeVNode(patch));
         case VPatch.REMOVE:
             return vpatch(null);
         default:
@@ -146,8 +147,8 @@ var P = Patchwork = {
 }
 
 Patchwork.Node.prototype = {
-    mount: function (vnode, outer) {
-        var el = createElement(vnode);
+    mount: function (vnode, outer, renderOpts) {
+        var el = createElement(vnode, renderOpts);
         P.log("createElement: ", vnode, "=>", el)
         outer.appendChild(el)
         this.element = el
@@ -159,7 +160,7 @@ Patchwork.Node.prototype = {
         if (!isVPatch(vpatches)) {
             vpatches = P.makeVPatches(this.root, vpatches)
         }
-        this.element = patch(this.element, vpatches)
+        this.element = patch(this.element, vpatches, this.renderOptions)
         this.root = patchVNode(this.root, vpatches)
     }
 }
@@ -294,21 +295,24 @@ var isHook = require("vtree/is-vhook")
 
 module.exports = applyProperties
 
-function applyProperties(node, props, previous) {
+function applyProperties(node, props, previous, renderOptions) {
+    var domNode = renderOptions && renderOptions.extractNode ?
+            renderOptions.extractNode(node) : node
+
     for (var propName in props) {
         var propValue = props[propName]
 
         if (propValue === undefined) {
-            removeProperty(node, props, previous, propName);
+            removeProperty(domNode, props, previous, propName);
         } else if (isHook(propValue)) {
-            propValue.hook(node,
+            propValue.hook(domNode,
                 propName,
                 previous ? previous[propName] : undefined)
         } else {
             if (isObject(propValue)) {
-                patchObject(node, props, previous, propName, propValue);
+                patchObject(domNode, props, previous, propName, propValue);
             } else if (propValue !== undefined) {
-                node[propName] = propValue
+                domNode[propName] = propValue
             }
         }
     }
@@ -394,8 +398,12 @@ var handleThunk = require("vtree/handle-thunk")
 
 module.exports = createElement
 
+function id(x) { return x }
+
 function createElement(vnode, opts) {
+
     var doc = opts ? opts.document || document : document
+    var domWrap = opts ? opts.domWrap || id : id
     var warn = opts ? opts.warn : null
 
     vnode = handleThunk(vnode).a
@@ -412,11 +420,11 @@ function createElement(vnode, opts) {
     }
 
     var node = (vnode.namespace === null) ?
-        doc.createElement(vnode.tagName, vnode.properties.is) :
-        doc.createElementNS(vnode.namespace, vnode.tagName)
+        domWrap(doc.createElement(vnode.tagName, vnode.properties.is)) :
+        domWrap(doc.createElementNS(vnode.namespace, vnode.tagName))
 
     var props = vnode.properties
-    applyProperties(node, props)
+    applyProperties(node, props, null, opts)
 
     var children = vnode.children
 
@@ -567,7 +575,7 @@ function applyPatch(vpatch, domNode, renderOptions) {
             reorderChildren(domNode, patch)
             return domNode
         case VPatch.PROPS:
-            applyProperties(domNode, patch, vNode.properties)
+            applyProperties(domNode, patch, vNode.properties, renderOptions)
             return domNode
         case VPatch.THUNK:
             return replaceRoot(domNode,
@@ -714,8 +722,8 @@ var domIndex = require("./dom-index")
 var patchOp = require("./patch-op")
 module.exports = patch
 
-function patch(rootNode, patches) {
-    return patchRecursive(rootNode, patches)
+function patch(rootNode, patches, renderOptions) {
+    return patchRecursive(rootNode, patches, renderOptions)
 }
 
 function patchRecursive(rootNode, patches, renderOptions) {
@@ -729,10 +737,14 @@ function patchRecursive(rootNode, patches, renderOptions) {
     var ownerDocument = rootNode.ownerDocument
 
     if (!renderOptions) {
-        renderOptions = { patch: patchRecursive }
+        renderOptions = {}
         if (ownerDocument !== document) {
             renderOptions.document = ownerDocument
         }
+    }
+
+    if (!renderOptions.patch) {
+        renderOptions.patch = patchRecursive
     }
 
     for (var i = 0; i < indices.length; i++) {

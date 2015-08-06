@@ -13,16 +13,17 @@ var isVPatch = require('./is-vpatch');
 var P = Patchwork = {
     nodes: {},
     debug: false,
-    Node: function (id, jlNode, el) {
+    Node: function (id, jlNode, el, renderOpts) {
         if (typeof(el) === "undefined") {
             el = document.getElementById(id)
         }
         this.id = id
+        this.renderOptions = renderOpts
         if (jlNode) {
             // Note: makes this.root
             var vnode = P.makeVNode(jlNode)
             P.log("makeVNode: ", jlNode, "=>", vnode)
-            this.mount(vnode, el)
+            this.mount(vnode, el, renderOpts)
         }
         P.nodes[id] = this
     },
@@ -145,8 +146,8 @@ var P = Patchwork = {
 }
 
 Patchwork.Node.prototype = {
-    mount: function (vnode, outer) {
-        var el = createElement(vnode);
+    mount: function (vnode, outer, renderOpts) {
+        var el = createElement(vnode, renderOpts);
         P.log("createElement: ", vnode, "=>", el)
         outer.appendChild(el)
         this.element = el
@@ -158,7 +159,7 @@ Patchwork.Node.prototype = {
         if (!isVPatch(vpatches)) {
             vpatches = P.makeVPatches(this.root, vpatches)
         }
-        this.element = patch(this.element, vpatches)
+        this.element = patch(this.element, vpatches, this.renderOptions)
         this.root = patchVNode(this.root, vpatches)
     }
 }
