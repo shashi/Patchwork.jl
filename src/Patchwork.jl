@@ -10,7 +10,8 @@ import Base:
        ==,
        >>,
        &,
-       writemime
+       writemime,
+       <<
 
 export Node,
        Elem,
