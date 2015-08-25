@@ -403,7 +403,6 @@ function id(x) { return x }
 function createElement(vnode, opts) {
 
     var doc = opts ? opts.document || document : document
-    var domWrap = opts ? opts.domWrap || id : id
     var warn = opts ? opts.warn : null
 
     vnode = handleThunk(vnode).a
@@ -420,8 +419,8 @@ function createElement(vnode, opts) {
     }
 
     var node = (vnode.namespace === null) ?
-        domWrap(doc.createElement(vnode.tagName, vnode.properties.is)) :
-        domWrap(doc.createElementNS(vnode.namespace, vnode.tagName))
+        doc.createElement(vnode.tagName, vnode.properties.is) :
+        doc.createElementNS(vnode.namespace, vnode.tagName)
 
     var props = vnode.properties
     applyProperties(node, props, null, opts)
