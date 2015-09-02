@@ -170,4 +170,44 @@ if isdefined(Main, :IJulia)
     include("ijulia.jl")
 end
 
+function showchildren(io, elems, indent_level)
+    length(elems) == 0 && return
+    write(io, "\n")
+    l = length(elems)
+    for i=1:l
+        show(io, elems[i], indent_level+1)
+        i != l && write(io, "\n")
+    end
+end
+
+function showindent(io, level)
+    for i=1:level
+        write(io, "  ")
+    end
+end
+
+function Base.show(io::IO, el::Text, indent_level=0)
+    showindent(io, indent_level)
+    show(io, el.text)
+end
+
+function Base.show{T}(io::IO, el::Elem{T}, indent_level=0)
+    showindent(io, indent_level)
+    write(io, "(")
+    if !is(T, DOM)
+        show(io, "{", T, "}")
+    end
+    if namespace(el) != :xhtml
+        write(io, namespace(el))
+        write(io, ":")
+    end
+    write(io, tag(el))
+    if hasproperties(el)
+        write(io, " ")
+        show(io, properties(el))
+    end
+    showchildren(io, children(el), indent_level)
+    write(io, ")")
+end
+
 end # module
