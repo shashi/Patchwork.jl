@@ -149,7 +149,16 @@ attrs(; kwargs...) = @compat Dict(:attributes => Dict(kwargs))
 props(; kwargs...) = kwargs
 
 (&){ns, name}(a::Elem{ns, name}, itr) =
-    Elem{ns, name}(hasproperties(a) ? recmerge(a.properties, itr) : itr , children(a))
+    Elem{ns, name}(hasproperties(a) ?
+        recmerge(a.properties, itr) : itr , children(a))
+
+withchild{ns, name}(f::Function, elem::Elem{ns, name}, i::Int) = begin
+    children = assoc(children(elem), i, f(elem[i]))
+    Elem(ns, name, hasproperties(a) ? a.properties : [], children)
+end
+
+withlastchild(f::Function, elem::Elem) =
+    withchild(f, elem, length(children(elem)))
 
 include("diff.jl")
 include("parse.jl")
