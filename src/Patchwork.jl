@@ -15,6 +15,9 @@ import Base:
 
 export Node,
        Elem,
+       dispatch_type,
+       namespace,
+       tag,
        properties,
        children,
        haschildren,
@@ -64,30 +67,34 @@ convert(::Type{NodeVector}, x::String) =
 
 convert(::Type{Props}, x::AbstractArray) = Props(x)
 
-# A DOM Element
-immutable Elem{ns, tag} <: Node
+# the default type parameter of Elem
+abstract DOM
+
+# An Element. T is to be used for dispatch
+immutable Elem{T} <: Node
+    namespace::Symbol
+    tag::Symbol
     count::Int
     children::NodeVector
     properties::Props
 
-    function Elem(properties, children)
+    function Elem(ns, tag, children, properties)
         childvec = convert(NodeVector, children)
         if isempty(properties)
-            new(count(childvec), childvec)
+            new(ns, tag, count(childvec), childvec)
         else
-            new(count(childvec), childvec, properties)
+            new(ns, tag, count(childvec), childvec, properties)
         end
-    end
-
-    function Elem()
-        n = new(0, EmptyNode)
     end
 end
 
-hasproperties(el::Elem) = isdefined(el, :properties)
-haschildren(el::Elem) = !isempty(el.children)
+dispatch_type{T}(el::Elem{T}) = el
+namespace(el::Elem) = el.namespace
+tag(el::Elem) = el.tag
 properties(el::Elem) = isdefined(el, :properties) ? el.properties : Props()
 children(el::Elem) = el.children
+hasproperties(el::Elem) = isdefined(el, :properties)
+haschildren(el::Elem) = !isempty(el.children)
 
 _count(t::Text) = 1
 _count(el::Elem) = el.count + 1
@@ -98,39 +105,44 @@ count(v::NodeVector) = Int[_count(x) for x in v] |> sum
 key(n::Elem) = hasproperties(n) ? get(n.properties, :key, nothing) : nothing
 key(n::Text) = nothing
 
-# A document type
-immutable DocVariant{ns}
-    elements::Vector{Symbol}
-end
-
 # constructors
-Elem(ns::Symbol, name::Symbol) = Elem{ns, name}()
+Elem{T}(::Type{T}, ns, name, props, children) =
+    Elem{T}(symbol(ns) , symbol(name), children, props)
 
 Elem(ns, name, props, children) =
-    Elem{symbol(ns) , symbol(name)}(props, children)
+    Elem(DOM, ns, name, props, children)
 
-Elem(ns::Symbol, name::Symbol, children=EmptyNode; kwargs...) =
+Elem(ns::Union(Symbol, String), name::Symbol, children=EmptyNode; kwargs...) =
     Elem(ns, name, kwargs, children)
 
-Elem(name, children=EmptyNode; kwargs...) =
+Elem(name::Union(Symbol, String), children=EmptyNode; kwargs...) =
     Elem(:xhtml, name, kwargs, children)
 
-isequal{ns,name}(a::Elem{ns,name}, b::Elem{ns,name}) =
-    a === b || (isequal(properties(a), properties(b)) &&
+Elem(T::Type, name, children=EmptyNode; kwargs...) =
+    Elem(T, :xhtml, name, kwargs, children)
+
+isequal{T}(a::Elem{T}, b::Elem{T}) =
+    a === b || (isequal(namespace(a), namespace(b)) &&
+                isequal(tag(a), tag(b)) &&
+                isequal(properties(a), properties(b)) &&
                 isequal(children(a), children(b)))
+
 isequal(a::Elem, b::Elem) = false
 
 ==(a::Text, b::Text) = a.text == b.text
-=={ns, name}(a::Elem{ns, name}, b::Elem{ns,name}) =
-    a === b || (a.properties == b.properties &&
-                a.children == b.children)
+=={T}(a::Elem{T}, b::Elem{T}) =
+    a === b || (namespace(a) == namespace(b) &&
+                tag(a) == tag(b) &&
+                properties(a) == properties(b) &&
+                children(a) == children(b))
+
 ==(a::Elem, b::Elem) = false
 
 # Combining elements
-(<<){ns, tag}(a::Elem{ns, tag}, b::AbstractArray) =
-    Elem{ns, tag}(hasproperties(a) ? a.properties : [], append(a.children, b))
-(<<){ns, tag}(a::Elem{ns, tag}, b::Node) =
-    Elem{ns, tag}(hasproperties(a) ? a.properties : [], push(a.children, b))
+(<<){T}(a::Elem{T}, b::AbstractArray) =
+    Elem(T, namespace(a), tag(a), hasproperties(a) ? a.properties : [], append(a.children, b))
+(<<){T}(a::Elem{T}, b::Node) =
+    Elem(T, namespace(a), tag(a), hasproperties(a) ? a.properties : [], push(a.children, b))
 
 # Manipulating properties
 function recmerge(a, b)
@@ -148,8 +160,9 @@ end
 attrs(; kwargs...) = @compat Dict(:attributes => Dict(kwargs))
 props(; kwargs...) = kwargs
 
-(&){ns, name}(a::Elem{ns, name}, itr) =
-    Elem{ns, name}(hasproperties(a) ? recmerge(a.properties, itr) : itr , children(a))
+(&){T}(a::Elem{T}, itr) =
+    Elem(T, namespace(a), tag(a), hasproperties(a) ? recmerge(a.properties, itr) : itr , children(a))
+
 
 include("diff.jl")
 include("parse.jl")
