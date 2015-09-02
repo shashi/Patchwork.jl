@@ -163,6 +163,12 @@ props(; kwargs...) = kwargs
 (&){T}(a::Elem{T}, itr) =
     Elem(T, namespace(a), tag(a), hasproperties(a) ? recmerge(a.properties, itr) : itr , children(a))
 
+withchild{T}(f::Function, elem::Elem{T}, i::Int) = begin
+    children = assoc(children(elem), i, f(elem[i]))
+    Elem(T, namespace(elem), tag(elem), hasproperties(a) ? a.properties : [], children)
+end
+withlastchild(f::Function, elem::Elem) =
+    withchild(f, elem, length(children(elem)))
 
 include("diff.jl")
 include("parse.jl")
