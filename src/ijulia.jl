@@ -4,7 +4,7 @@ import JSON: json
 
 import Base: writemime
 
-if Pkg.installed("Reactive") >= v"0.1.9"
+if Pkg.installed("Reactive") !=nothing && Pkg.installed("Reactive") >= v"0.1.9"
     import Reactive: Signal, value, lift
 
     function diff(s::Signal)
