@@ -53,7 +53,7 @@ const EmptyNode = NodeVector([])
 convert(::Type{NodeVector}, x) =
     NodeVector([convert(Node, y) for y in x])
 
-convert{T <: Node}(::Type{NodeVector}, x::T) =
+convert(::Type{NodeVector}, x::Node) =
     NodeVector([x])
 
 convert(::Type{NodeVector}, x::NodeVector) =

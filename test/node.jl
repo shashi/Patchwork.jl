@@ -15,3 +15,8 @@ facts("Testing Nodes") do
         @fact count(ul(li("x"), li("x"))) --> 4
     end
 end
+
+facts("Testing nested node creation") do
+  node = Elem(:div, Text("a"))
+  @fact count(node) --> 1
+end
