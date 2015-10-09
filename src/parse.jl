@@ -37,7 +37,7 @@ function make_tag(str)
 end
 
 # Given a string, returns a vector of elements
-function parse_elems(str::String, ns=:xhtml)
+function parse_elems(str::AbstractString, ns=:xhtml)
 
     node_stack = Node[Elem(:wrapper, :dummy)] # hack again
 

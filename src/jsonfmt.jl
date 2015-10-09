@@ -14,7 +14,7 @@ function jsonfmt{ns, tag}(x::Elem{ns, tag})
     end
     dict
 end
-jsonfmt(::Nothing) = nothing
+jsonfmt(::(@compat Void)) = nothing
 
 # values from vtree/vpatch.js
 const VPATCH_NONE = 0
