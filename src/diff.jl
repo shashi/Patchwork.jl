@@ -105,8 +105,8 @@ function diff!{ns, tag}(a::Elem{ns, tag}, b::Elem{ns, tag}, index, patches)
 end
 
 are_equal(a::AbstractArray, b::AbstractArray) = a === b || a == b
-are_equal(a::String, b::Symbol) = a == string(b)
-are_equal(a::Symbol, b::String) = string(a) == b
+are_equal(a::AbstractString, b::Symbol) = a == string(b)
+are_equal(a::Symbol, b::AbstractString) = string(a) == b
 are_equal(a, b) = a == b
 
 function diff(a::Associative, b::Associative)

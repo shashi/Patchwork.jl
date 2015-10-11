@@ -30,7 +30,7 @@ export Node,
        tohtml,
        writemime
 
-typealias MaybeKey Union(Nothing, Symbol)
+typealias MaybeKey @compat Union{(@compat Void), Symbol}
 
 # A Patchwork node
 abstract Node
@@ -41,8 +41,8 @@ end
 text(xs...) =
     Text(string(xs...))
 
-convert(::Type{Node}, s::String) = text(s)
-promote_rule(::Type{Node}, ::Type{String}) = Node
+convert(::Type{Node}, s::AbstractString) = text(s)
+promote_rule(::Type{Node}, ::Type{AbstractString}) = Node
 
 # Abstract out the word "Persistent"
 typealias NodeVector   PersistentVector{Node}
@@ -59,7 +59,7 @@ convert(::Type{NodeVector}, x::Node) =
 convert(::Type{NodeVector}, x::NodeVector) =
     x
 
-convert(::Type{NodeVector}, x::String) =
+convert(::Type{NodeVector}, x::AbstractString) =
     NodeVector([text(x)])
 
 convert(::Type{Props}, x::AbstractArray) = Props(x)
