@@ -190,21 +190,29 @@ function Base.show(io::IO, el::Text, indent_level=0)
     showindent(io, indent_level)
     show(io, el.text)
 end
+function showprops(io, dict)
+    write(io, "{")
+    write(io, ' ')
+    for (k,v) in dict
+        print(io, k)
+        write(io, '=')
+        show(io, v)
+        write(io, ' ')
+    end
+    write(io, "}")
+end
 
-function Base.show{T}(io::IO, el::Elem{T}, indent_level=0)
+function Base.show{ns, tag}(io::IO, el::Elem{ns, tag}, indent_level=0)
     showindent(io, indent_level)
     write(io, "(")
-    if !is(T, DOM)
-        show(io, "{", T, "}")
-    end
     if namespace(el) != :xhtml
         write(io, namespace(el))
         write(io, ":")
     end
-    write(io, tag(el))
+    write(io, tag)
     if hasproperties(el)
         write(io, " ")
-        show(io, properties(el))
+        showprops(io, properties(el))
     end
     showchildren(io, children(el), indent_level)
     write(io, ")")
