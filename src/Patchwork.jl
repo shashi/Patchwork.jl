@@ -19,6 +19,8 @@ export Node,
        children,
        haschildren,
        hasproperties,
+       withchild,
+       withlastchild,
        Text,
        text,
        NodeVector,
@@ -153,8 +155,9 @@ props(; kwargs...) = kwargs
         recmerge(a.properties, itr) : itr , children(a))
 
 withchild{ns, name}(f::Function, elem::Elem{ns, name}, i::Int) = begin
-    children = assoc(children(elem), i, f(elem[i]))
-    Elem(ns, name, hasproperties(a) ? a.properties : [], children)
+    cs = children(elem)
+    cs′ = assoc(cs, i, f(cs[i]))
+    Elem(ns, name, hasproperties(elem) ? elem.properties : [], cs′)
 end
 
 withlastchild(f::Function, elem::Elem) =
