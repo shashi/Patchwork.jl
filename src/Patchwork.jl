@@ -169,9 +169,6 @@ include("parse.jl")
 include("jsonfmt.jl")
 include("writers.jl")
 
-if isdefined(Main, :IJulia)
-    include("ijulia.jl")
-end
 
 function showchildren(io, elems, indent_level)
     length(elems) == 0 && return
@@ -219,6 +216,17 @@ function Base.show{ns, tag}(io::IO, el::Elem{ns, tag}, indent_level=0)
     end
     showchildren(io, children(el), indent_level)
     write(io, ")")
+end
+
+function __init__()
+    if isdefined(Main, :IJulia)
+        include(joinpath(dirname(@__FILE__), "ijulia.jl"))
+    end
+    try
+        load_js_runtime()
+    catch
+    end
+
 end
 
 end # module

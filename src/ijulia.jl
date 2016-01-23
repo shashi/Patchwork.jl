@@ -1,23 +1,24 @@
 using IJulia.CommManager
 import IJulia.metadata
 import JSON: json
+using Patchwork
 
 import Base: writemime
 
 if Pkg.installed("Reactive") !=nothing && Pkg.installed("Reactive") >= v"0.1.9"
-    import Reactive: Signal, value, lift
+    import Reactive: Signal, value, preserve
 
     function diff(s::Signal)
         prev = value(s)
-        lift((x) -> begin
-            d = diff(prev, x)
+        map((x) -> begin
+            d = Patchwork.diff(prev, x)
             prev = x
             d
         end, s)
     end
 
     function send_patch(comm, d)
-        jsonpatch = jsonfmt(d)
+        jsonpatch = Patchwork.jsonfmt(d)
         if !isempty(jsonpatch)
             send_comm(comm, jsonpatch)
         end
@@ -26,14 +27,14 @@ if Pkg.installed("Reactive") !=nothing && Pkg.installed("Reactive") >= v"0.1.9"
     metadata{ns, name}(x::Signal{Elem{ns, name}}) = Dict()
 
     function writemime{ns, name}(io::IO, ::MIME"text/html", x::Signal{Elem{ns, name}})
-        id = pwid()
+        id = Patchwork.pwid()
 
         write(io, """<div id="$id">""",
-                  """<script>new Patchwork.Node("$id", $(json(jsonfmt(value(x)))));</script>""",
+                  """<script>new Patchwork.Node("$id", $(json(Patchwork.jsonfmt(value(x)))));</script>""",
                   """</div>""")
 
-        comm = Comm(:PatchStream; data=@compat Dict(:pwid => id))
+        comm = Comm(:PatchStream; data=Dict(:pwid => id))
         # lift patch stream
-        lift((d) -> send_patch(comm, d), diff(x))
+        map((d) -> send_patch(comm, d), diff(x)) |> preserve
     end
 end

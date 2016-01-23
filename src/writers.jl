@@ -8,11 +8,6 @@ load_js_runtime() =
         js_runtime()
     )</script>")
 
-try
-    load_js_runtime()
-catch
-end
-
 
 pwid() = replace(string(gensym("pwid")), "#", "")
 
