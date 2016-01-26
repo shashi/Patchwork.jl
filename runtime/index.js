@@ -164,21 +164,36 @@ Patchwork.Node.prototype = {
     }
 }
 
+function init(nb, cue) {
+    if (!Patchwork.inited) {
+        try {
+            console.log("attempting Patchwork setup, cue:", cue)
+            var commMgr =  nb.kernel.comm_manager;
+            commMgr.register_target("PatchStream", function (comm, msg) {
+                var nodeId = msg.content.data.pwid;
+                comm.on_msg(function (msg) {
+                    var node = P.nodes[nodeId],
+                        patches = msg.content.data
+                    node.applyPatch(patches)
+                    P.log("received patches", patches)
+                });
+            });
+            Patchwork.inited = true;
+        } catch (e) {
+            Patchwork.inited = false;
+            console.log("ERROR initializing patchwork: ", e);
+            console.log("attempting failed, cue:", cue)
+        }
+    }
+}
 
 // IJulia setup
-if (typeof(window.IPython) !== "undefined" && typeof(window.jQuery) !== "undefined") {
-    $(document).ready(function () {
-        var commMgr =  IPython.notebook.kernel.comm_manager;
-        commMgr.register_target("PatchStream", function (comm, msg) {
-            var nodeId = msg.content.data.pwid;
-            comm.on_msg(function (msg) {
-                var node = P.nodes[nodeId],
-                    patches = msg.content.data
-                node.applyPatch(patches)
-                P.log("received patches", patches)
-            });
-        });
-    });
+if (typeof(window.IPython) !== "undefined") {
+    init(IPython.notebook, "immediate");
+    $(document).ready(function () { init(IPython.notebook, "document ready"); });
+    $([IPython.events]).on("kernel_ready.Kernel kernel_created.Kernel", function (evt, nb) {
+        init(nb, "kernel start")
+    })
 }
 
 window.Patchwork = Patchwork;

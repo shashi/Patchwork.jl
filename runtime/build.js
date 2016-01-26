@@ -165,26 +165,41 @@ Patchwork.Node.prototype = {
     }
 }
 
+function init(nb, cue) {
+    if (!Patchwork.inited) {
+        try {
+            console.log("attempting Patchwork setup, cue:", cue)
+            var commMgr =  nb.kernel.comm_manager;
+            commMgr.register_target("PatchStream", function (comm, msg) {
+                var nodeId = msg.content.data.pwid;
+                comm.on_msg(function (msg) {
+                    var node = P.nodes[nodeId],
+                        patches = msg.content.data
+                    node.applyPatch(patches)
+                    P.log("received patches", patches)
+                });
+            });
+            Patchwork.inited = true;
+        } catch (e) {
+            Patchwork.inited = false;
+            console.log("ERROR initializing patchwork: ", e);
+            console.log("attempting failed, cue:", cue)
+        }
+    }
+}
 
 // IJulia setup
-if (typeof(window.IPython) !== "undefined" && typeof(window.jQuery) !== "undefined") {
-    $(document).ready(function () {
-        var commMgr =  IPython.notebook.kernel.comm_manager;
-        commMgr.register_target("PatchStream", function (comm, msg) {
-            var nodeId = msg.content.data.pwid;
-            comm.on_msg(function (msg) {
-                var node = P.nodes[nodeId],
-                    patches = msg.content.data
-                node.applyPatch(patches)
-                P.log("received patches", patches)
-            });
-        });
-    });
+if (typeof(window.IPython) !== "undefined") {
+    init(IPython.notebook, "immediate");
+    $(document).ready(function () { init(IPython.notebook, "document ready"); });
+    $([IPython.events]).on("kernel_ready.Kernel kernel_created.Kernel", function (evt, nb) {
+        init(nb, "kernel start")
+    })
 }
 
 window.Patchwork = Patchwork;
 
-},{"./is-vpatch":2,"./node-index":3,"./patch-vnode":58,"virtual-dom/create-element":5,"virtual-dom/diff":6,"virtual-dom/patch":23,"virtual-hyperscript/svg":47,"vtree/vnode":53,"vtree/vpatch":54,"vtree/vtext":55,"x-is-array":56}],2:[function(require,module,exports){
+},{"./is-vpatch":2,"./node-index":3,"./patch-vnode":52,"virtual-dom/create-element":5,"virtual-dom/diff":6,"virtual-dom/patch":14,"virtual-hyperscript/svg":38,"vtree/vnode":47,"vtree/vpatch":48,"vtree/vtext":49,"x-is-array":50}],2:[function(require,module,exports){
 var version = require("vtree/version")
 
 module.exports = isVirtualPatch
@@ -193,7 +208,7 @@ function isVirtualPatch(x) {
     return x && x.type === "VirtualPatch" && x.version === version
 }
 
-},{"vtree/version":52}],3:[function(require,module,exports){
+},{"vtree/version":46}],3:[function(require,module,exports){
 module.exports = nodeIndex
 
 function nodeIndex(tree, indices, nodes) {
@@ -289,30 +304,27 @@ var diff = require("vtree/diff")
 
 module.exports = diff
 
-},{"vtree/diff":14}],7:[function(require,module,exports){
+},{"vtree/diff":39}],7:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("vtree/is-vhook")
 
 module.exports = applyProperties
 
-function applyProperties(node, props, previous, renderOptions) {
-    var domNode = renderOptions && renderOptions.extractNode ?
-            renderOptions.extractNode(node) : node
-
+function applyProperties(node, props, previous) {
     for (var propName in props) {
         var propValue = props[propName]
 
         if (propValue === undefined) {
-            removeProperty(domNode, props, previous, propName);
+            removeProperty(node, props, previous, propName);
         } else if (isHook(propValue)) {
-            propValue.hook(domNode,
+            propValue.hook(node,
                 propName,
                 previous ? previous[propName] : undefined)
         } else {
             if (isObject(propValue)) {
-                patchObject(domNode, props, previous, propName, propValue);
+                patchObject(node, props, previous, propName, propValue);
             } else if (propValue !== undefined) {
-                domNode[propName] = propValue
+                node[propName] = propValue
             }
         }
     }
@@ -386,7 +398,7 @@ function getPrototype(value) {
     }
 }
 
-},{"is-object":4,"vtree/is-vhook":17}],8:[function(require,module,exports){
+},{"is-object":4,"vtree/is-vhook":42}],8:[function(require,module,exports){
 var document = require("global/document")
 
 var applyProperties = require("./apply-properties")
@@ -398,10 +410,7 @@ var handleThunk = require("vtree/handle-thunk")
 
 module.exports = createElement
 
-function id(x) { return x }
-
 function createElement(vnode, opts) {
-
     var doc = opts ? opts.document || document : document
     var warn = opts ? opts.warn : null
 
@@ -419,11 +428,11 @@ function createElement(vnode, opts) {
     }
 
     var node = (vnode.namespace === null) ?
-        doc.createElement(vnode.tagName, vnode.properties.is) :
+        doc.createElement(vnode.tagName) :
         doc.createElementNS(vnode.namespace, vnode.tagName)
 
     var props = vnode.properties
-    applyProperties(node, props, null, opts)
+    applyProperties(node, props)
 
     var children = vnode.children
 
@@ -437,7 +446,7 @@ function createElement(vnode, opts) {
     return node
 }
 
-},{"./apply-properties":7,"global/document":10,"vtree/handle-thunk":15,"vtree/is-vnode":18,"vtree/is-vtext":19,"vtree/is-widget":20}],9:[function(require,module,exports){
+},{"./apply-properties":7,"global/document":10,"vtree/handle-thunk":40,"vtree/is-vnode":43,"vtree/is-vtext":44,"vtree/is-widget":45}],9:[function(require,module,exports){
 // Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
 // We don't want to read all of the DOM nodes in the tree so we use
 // the in-order tree indexing to eliminate recursion down certain branches.
@@ -543,7 +552,7 @@ if (typeof document !== 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":60}],11:[function(require,module,exports){
+},{"min-document":54}],11:[function(require,module,exports){
 var applyProperties = require("./apply-properties")
 
 var isWidget = require("vtree/is-widget")
@@ -574,7 +583,7 @@ function applyPatch(vpatch, domNode, renderOptions) {
             reorderChildren(domNode, patch)
             return domNode
         case VPatch.PROPS:
-            applyProperties(domNode, patch, vNode.properties, renderOptions)
+            applyProperties(domNode, patch, vNode.properties)
             return domNode
         case VPatch.THUNK:
             return replaceRoot(domNode,
@@ -713,7 +722,7 @@ function replaceRoot(oldRoot, newRoot) {
     return newRoot;
 }
 
-},{"./apply-properties":7,"./create-element":8,"./update-widget":13,"vtree/is-widget":20,"vtree/vpatch":22}],12:[function(require,module,exports){
+},{"./apply-properties":7,"./create-element":8,"./update-widget":13,"vtree/is-widget":45,"vtree/vpatch":48}],12:[function(require,module,exports){
 var document = require("global/document")
 var isArray = require("x-is-array")
 
@@ -721,8 +730,8 @@ var domIndex = require("./dom-index")
 var patchOp = require("./patch-op")
 module.exports = patch
 
-function patch(rootNode, patches, renderOptions) {
-    return patchRecursive(rootNode, patches, renderOptions)
+function patch(rootNode, patches) {
+    return patchRecursive(rootNode, patches)
 }
 
 function patchRecursive(rootNode, patches, renderOptions) {
@@ -736,14 +745,10 @@ function patchRecursive(rootNode, patches, renderOptions) {
     var ownerDocument = rootNode.ownerDocument
 
     if (!renderOptions) {
-        renderOptions = {}
+        renderOptions = { patch: patchRecursive }
         if (ownerDocument !== document) {
             renderOptions.document = ownerDocument
         }
-    }
-
-    if (!renderOptions.patch) {
-        renderOptions.patch = patchRecursive
     }
 
     for (var i = 0; i < indices.length; i++) {
@@ -795,7 +800,7 @@ function patchIndices(patches) {
     return indices
 }
 
-},{"./dom-index":9,"./patch-op":11,"global/document":10,"x-is-array":56}],13:[function(require,module,exports){
+},{"./dom-index":9,"./patch-op":11,"global/document":10,"x-is-array":50}],13:[function(require,module,exports){
 var isWidget = require("vtree/is-widget")
 
 module.exports = updateWidget
@@ -812,7 +817,709 @@ function updateWidget(a, b) {
     return false
 }
 
-},{"vtree/is-widget":20}],14:[function(require,module,exports){
+},{"vtree/is-widget":45}],14:[function(require,module,exports){
+var patch = require("vdom/patch")
+
+module.exports = patch
+
+},{"vdom/patch":12}],15:[function(require,module,exports){
+module.exports = AttributeHook;
+
+function AttributeHook(value) {
+    if (!(this instanceof AttributeHook)) {
+        return new AttributeHook(value);
+    }
+
+    this.value = value;
+}
+
+AttributeHook.prototype.hook = function (node, prop, prev) {
+    if (prev && prev.value === this.value) {
+        return;
+    }
+
+    node.setAttributeNS(null, prop, this.value)
+}
+
+},{}],16:[function(require,module,exports){
+var DataSet = require("data-set")
+
+module.exports = DataSetHook;
+
+function DataSetHook(value) {
+    if (!(this instanceof DataSetHook)) {
+        return new DataSetHook(value);
+    }
+
+    this.value = value;
+}
+
+DataSetHook.prototype.hook = function (node, propertyName) {
+    var ds = DataSet(node)
+    var propName = propertyName.substr(5)
+
+    ds[propName] = this.value;
+};
+
+},{"data-set":21}],17:[function(require,module,exports){
+var DataSet = require("data-set")
+
+module.exports = DataSetHook;
+
+function DataSetHook(value) {
+    if (!(this instanceof DataSetHook)) {
+        return new DataSetHook(value);
+    }
+
+    this.value = value;
+}
+
+DataSetHook.prototype.hook = function (node, propertyName) {
+    var ds = DataSet(node)
+    var propName = propertyName.substr(3)
+
+    ds[propName] = this.value;
+};
+
+},{"data-set":21}],18:[function(require,module,exports){
+module.exports = SoftSetHook;
+
+function SoftSetHook(value) {
+    if (!(this instanceof SoftSetHook)) {
+        return new SoftSetHook(value);
+    }
+
+    this.value = value;
+}
+
+SoftSetHook.prototype.hook = function (node, propertyName) {
+    if (node[propertyName] !== this.value) {
+        node[propertyName] = this.value;
+    }
+};
+
+},{}],19:[function(require,module,exports){
+var VNode = require("vtree/vnode.js")
+var VText = require("vtree/vtext.js")
+var isVNode = require("vtree/is-vnode")
+var isVText = require("vtree/is-vtext")
+var isWidget = require("vtree/is-widget")
+var isHook = require("vtree/is-vhook")
+var isVThunk = require("vtree/is-thunk")
+var TypedError = require("error/typed")
+
+var parseTag = require("./parse-tag.js")
+var softSetHook = require("./hooks/soft-set-hook.js")
+var dataSetHook = require("./hooks/data-set-hook.js")
+var evHook = require("./hooks/ev-hook.js")
+
+var UnexpectedVirtualElement = TypedError({
+    type: "virtual-hyperscript.unexpected.virtual-element",
+    message: "Unexpected virtual child passed to h().\n" +
+        "Expected a VNode / Vthunk / VWidget / string but:\n" +
+        "got a {foreignObjectStr}.\n" +
+        "The parent vnode is {parentVnodeStr}.\n" +
+        "Suggested fix: change your `h(..., [ ... ])` callsite.",
+    foreignObjectStr: null,
+    parentVnodeStr: null,
+    foreignObject: null,
+    parentVnode: null
+})
+
+module.exports = h
+
+function h(tagName, properties, children) {
+    var childNodes = []
+    var tag, props, key, namespace
+
+    if (!children && isChildren(properties)) {
+        children = properties
+        props = {}
+    }
+
+    props = props || properties || {}
+    tag = parseTag(tagName, props)
+
+    // support keys
+    if ("key" in props) {
+        key = props.key
+        props.key = undefined
+    }
+
+    // support namespace
+    if ("namespace" in props) {
+        namespace = props.namespace
+        props.namespace = undefined
+    }
+
+    // fix cursor bug
+    if (tag === "input" &&
+        "value" in props &&
+        props.value !== undefined &&
+        !isHook(props.value)
+    ) {
+        props.value = softSetHook(props.value)
+    }
+
+    var keys = Object.keys(props)
+    var propName, value
+    for (var j = 0; j < keys.length; j++) {
+        propName = keys[j]
+        value = props[propName]
+        if (isHook(value)) {
+            continue
+        }
+
+        // add data-foo support
+        if (propName.substr(0, 5) === "data-") {
+            props[propName] = dataSetHook(value)
+        }
+
+        // add ev-foo support
+        if (propName.substr(0, 3) === "ev-") {
+            props[propName] = evHook(value)
+        }
+    }
+
+    if (children !== undefined && children !== null) {
+        addChild(children, childNodes, tag, props)
+    }
+
+
+    var node = new VNode(tag, props, childNodes, key, namespace)
+
+    return node
+}
+
+function addChild(c, childNodes, tag, props) {
+    if (typeof c === "string") {
+        childNodes.push(new VText(c))
+    } else if (isChild(c)) {
+        childNodes.push(c)
+    } else if (Array.isArray(c)) {
+        for (var i = 0; i < c.length; i++) {
+            addChild(c[i], childNodes, tag, props)
+        }
+    } else if (c === null || c === undefined) {
+        return
+    } else {
+        throw UnexpectedVirtualElement({
+            foreignObjectStr: JSON.stringify(c),
+            foreignObject: c,
+            parentVnodeStr: JSON.stringify({
+                tagName: tag,
+                properties: props
+            }),
+            parentVnode: {
+                tagName: tag,
+                properties: props
+            }
+        })
+    }
+}
+
+function isChild(x) {
+    return isVNode(x) || isVText(x) || isWidget(x) || isVThunk(x)
+}
+
+function isChildren(x) {
+    return typeof x === "string" || Array.isArray(x) || isChild(x)
+}
+
+},{"./hooks/data-set-hook.js":16,"./hooks/ev-hook.js":17,"./hooks/soft-set-hook.js":18,"./parse-tag.js":37,"error/typed":28,"vtree/is-thunk":29,"vtree/is-vhook":30,"vtree/is-vnode":31,"vtree/is-vtext":32,"vtree/is-widget":33,"vtree/vnode.js":35,"vtree/vtext.js":36}],20:[function(require,module,exports){
+module.exports = createHash
+
+function createHash(elem) {
+    var attributes = elem.attributes
+    var hash = {}
+
+    if (attributes === null || attributes === undefined) {
+        return hash
+    }
+
+    for (var i = 0; i < attributes.length; i++) {
+        var attr = attributes[i]
+
+        if (attr.name.substr(0,5) !== "data-") {
+            continue
+        }
+
+        hash[attr.name.substr(5)] = attr.value
+    }
+
+    return hash
+}
+
+},{}],21:[function(require,module,exports){
+var createStore = require("weakmap-shim/create-store")
+var Individual = require("individual")
+
+var createHash = require("./create-hash.js")
+
+var hashStore = Individual("__DATA_SET_WEAKMAP@3", createStore())
+
+module.exports = DataSet
+
+function DataSet(elem) {
+    var store = hashStore(elem)
+
+    if (!store.hash) {
+        store.hash = createHash(elem)
+    }
+
+    return store.hash
+}
+
+},{"./create-hash.js":20,"individual":22,"weakmap-shim/create-store":23}],22:[function(require,module,exports){
+(function (global){
+var root = typeof window !== 'undefined' ?
+    window : typeof global !== 'undefined' ?
+    global : {};
+
+module.exports = Individual
+
+function Individual(key, value) {
+    if (root[key]) {
+        return root[key]
+    }
+
+    Object.defineProperty(root, key, {
+        value: value
+        , configurable: true
+    })
+
+    return value
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],23:[function(require,module,exports){
+var hiddenStore = require('./hidden-store.js');
+
+module.exports = createStore;
+
+function createStore() {
+    var key = {};
+
+    return function (obj) {
+        if (typeof obj !== 'object' || obj === null) {
+            throw new Error('Weakmap-shim: Key must be object')
+        }
+
+        var store = obj.valueOf(key);
+        return store && store.identity === key ?
+            store : hiddenStore(obj, key);
+    };
+}
+
+},{"./hidden-store.js":24}],24:[function(require,module,exports){
+module.exports = hiddenStore;
+
+function hiddenStore(obj, key) {
+    var store = { identity: key };
+    var valueOf = obj.valueOf;
+
+    Object.defineProperty(obj, "valueOf", {
+        value: function (value) {
+            return value !== key ?
+                valueOf.apply(this, arguments) : store;
+        },
+        writable: true
+    });
+
+    return store;
+}
+
+},{}],25:[function(require,module,exports){
+module.exports = function(obj) {
+    if (typeof obj === 'string') return camelCase(obj);
+    return walk(obj);
+};
+
+function walk (obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    if (isDate(obj) || isRegex(obj)) return obj;
+    if (isArray(obj)) return map(obj, walk);
+    return reduce(objectKeys(obj), function (acc, key) {
+        var camel = camelCase(key);
+        acc[camel] = walk(obj[key]);
+        return acc;
+    }, {});
+}
+
+function camelCase(str) {
+    return str.replace(/[_.-](\w|$)/g, function (_,x) {
+        return x.toUpperCase();
+    });
+}
+
+var isArray = Array.isArray || function (obj) {
+    return Object.prototype.toString.call(obj) === '[object Array]';
+};
+
+var isDate = function (obj) {
+    return Object.prototype.toString.call(obj) === '[object Date]';
+};
+
+var isRegex = function (obj) {
+    return Object.prototype.toString.call(obj) === '[object RegExp]';
+};
+
+var has = Object.prototype.hasOwnProperty;
+var objectKeys = Object.keys || function (obj) {
+    var keys = [];
+    for (var key in obj) {
+        if (has.call(obj, key)) keys.push(key);
+    }
+    return keys;
+};
+
+function map (xs, f) {
+    if (xs.map) return xs.map(f);
+    var res = [];
+    for (var i = 0; i < xs.length; i++) {
+        res.push(f(xs[i], i));
+    }
+    return res;
+}
+
+function reduce (xs, f, acc) {
+    if (xs.reduce) return xs.reduce(f, acc);
+    for (var i = 0; i < xs.length; i++) {
+        acc = f(acc, xs[i], i);
+    }
+    return acc;
+}
+
+},{}],26:[function(require,module,exports){
+var nargs = /\{([0-9a-zA-Z]+)\}/g
+var slice = Array.prototype.slice
+
+module.exports = template
+
+function template(string) {
+    var args
+
+    if (arguments.length === 2 && typeof arguments[1] === "object") {
+        args = arguments[1]
+    } else {
+        args = slice.call(arguments, 1)
+    }
+
+    if (!args || !args.hasOwnProperty) {
+        args = {}
+    }
+
+    return string.replace(nargs, function replaceArg(match, i, index) {
+        var result
+
+        if (string[index - 1] === "{" &&
+            string[index + match.length] === "}") {
+            return i
+        } else {
+            result = args.hasOwnProperty(i) ? args[i] : null
+            if (result === null || result === undefined) {
+                return ""
+            }
+
+            return result
+        }
+    })
+}
+
+},{}],27:[function(require,module,exports){
+module.exports = extend
+
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+function extend(target) {
+    for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i]
+
+        for (var key in source) {
+            if (hasOwnProperty.call(source, key)) {
+                target[key] = source[key]
+            }
+        }
+    }
+
+    return target
+}
+
+},{}],28:[function(require,module,exports){
+var camelize = require("camelize")
+var template = require("string-template")
+var extend = require("xtend/mutable")
+
+module.exports = TypedError
+
+function TypedError(args) {
+    if (!args) {
+        throw new Error("args is required");
+    }
+    if (!args.type) {
+        throw new Error("args.type is required");
+    }
+    if (!args.message) {
+        throw new Error("args.message is required");
+    }
+
+    var message = args.message
+
+    if (args.type && !args.name) {
+        var errorName = camelize(args.type) + "Error"
+        args.name = errorName[0].toUpperCase() + errorName.substr(1)
+    }
+
+    extend(createError, args);
+    createError._name = args.name;
+
+    return createError;
+
+    function createError(opts) {
+        var result = new Error()
+
+        Object.defineProperty(result, "type", {
+            value: result.type,
+            enumerable: true,
+            writable: true,
+            configurable: true
+        })
+
+        var options = extend({}, args, opts)
+
+        extend(result, options)
+        result.message = template(message, options)
+
+        return result
+    }
+}
+
+
+},{"camelize":25,"string-template":26,"xtend/mutable":27}],29:[function(require,module,exports){
+module.exports = isThunk
+
+function isThunk(t) {
+    return t && t.type === "Thunk"
+}
+
+},{}],30:[function(require,module,exports){
+module.exports = isHook
+
+function isHook(hook) {
+    return hook && typeof hook.hook === "function" &&
+        !hook.hasOwnProperty("hook")
+}
+
+},{}],31:[function(require,module,exports){
+var version = require("./version")
+
+module.exports = isVirtualNode
+
+function isVirtualNode(x) {
+    return x && x.type === "VirtualNode" && x.version === version
+}
+
+},{"./version":34}],32:[function(require,module,exports){
+var version = require("./version")
+
+module.exports = isVirtualText
+
+function isVirtualText(x) {
+    return x && x.type === "VirtualText" && x.version === version
+}
+
+},{"./version":34}],33:[function(require,module,exports){
+module.exports = isWidget
+
+function isWidget(w) {
+    return w && w.type === "Widget"
+}
+
+},{}],34:[function(require,module,exports){
+module.exports = "1"
+
+},{}],35:[function(require,module,exports){
+var version = require("./version")
+var isVNode = require("./is-vnode")
+var isWidget = require("./is-widget")
+var isVHook = require("./is-vhook")
+
+module.exports = VirtualNode
+
+var noProperties = {}
+var noChildren = []
+
+function VirtualNode(tagName, properties, children, key, namespace) {
+    this.tagName = tagName
+    this.properties = properties || noProperties
+    this.children = children || noChildren
+    this.key = key != null ? String(key) : undefined
+    this.namespace = (typeof namespace === "string") ? namespace : null
+
+    var count = (children && children.length) || 0
+    var descendants = 0
+    var hasWidgets = false
+    var descendantHooks = false
+    var hooks
+
+    for (var propName in properties) {
+        if (properties.hasOwnProperty(propName)) {
+            var property = properties[propName]
+            if (isVHook(property)) {
+                if (!hooks) {
+                    hooks = {}
+                }
+
+                hooks[propName] = property
+            }
+        }
+    }
+
+    for (var i = 0; i < count; i++) {
+        var child = children[i]
+        if (isVNode(child)) {
+            descendants += child.count || 0
+
+            if (!hasWidgets && child.hasWidgets) {
+                hasWidgets = true
+            }
+
+            if (!descendantHooks && (child.hooks || child.descendantHooks)) {
+                descendantHooks = true
+            }
+        } else if (!hasWidgets && isWidget(child)) {
+            if (typeof child.destroy === "function") {
+                hasWidgets = true
+            }
+        }
+    }
+
+    this.count = count + descendants
+    this.hasWidgets = hasWidgets
+    this.hooks = hooks
+    this.descendantHooks = descendantHooks
+}
+
+VirtualNode.prototype.version = version
+VirtualNode.prototype.type = "VirtualNode"
+
+},{"./is-vhook":30,"./is-vnode":31,"./is-widget":33,"./version":34}],36:[function(require,module,exports){
+var version = require("./version")
+
+module.exports = VirtualText
+
+function VirtualText(text) {
+    this.text = String(text)
+}
+
+VirtualText.prototype.version = version
+VirtualText.prototype.type = "VirtualText"
+
+},{"./version":34}],37:[function(require,module,exports){
+var classIdSplit = /([\.#]?[a-zA-Z0-9_:-]+)/
+var notClassId = /^\.|#/
+
+module.exports = parseTag
+
+function parseTag(tag, props) {
+    if (!tag) {
+        return "div"
+    }
+
+    var noId = !("id" in props)
+
+    var tagParts = tag.split(classIdSplit)
+    var tagName = null
+
+    if (notClassId.test(tagParts[1])) {
+        tagName = "div"
+    }
+
+    var classes, part, type, i
+    for (i = 0; i < tagParts.length; i++) {
+        part = tagParts[i]
+
+        if (!part) {
+            continue
+        }
+
+        type = part.charAt(0)
+
+        if (!tagName) {
+            tagName = part
+        } else if (type === ".") {
+            classes = classes || []
+            classes.push(part.substring(1, part.length))
+        } else if (type === "#" && noId) {
+            props.id = part.substring(1, part.length)
+        }
+    }
+
+    if (classes) {
+        if (props.className) {
+            classes.push(props.className)
+        }
+
+        props.className = classes.join(" ")
+    }
+
+    return tagName ? tagName.toLowerCase() : "div"
+}
+
+},{}],38:[function(require,module,exports){
+var attributeHook = require("./hooks/attribute-hook.js")
+var h = require("./index.js")
+
+var BLACKLISTED_KEYS = {
+    "style": true,
+    "namespace": true,
+    "key": true
+}
+var SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+
+module.exports = svg
+
+function svg(tagName, properties, children) {
+    if (!children && isChildren(properties)) {
+        children = properties
+        properties = {}
+    }
+
+    properties = properties || {}
+
+    // set namespace for svg
+    properties.namespace = SVG_NAMESPACE
+
+    // for each key, if attribute & string, bool or number then
+    // convert it into a setAttribute hook
+    for (var key in properties) {
+        if (!properties.hasOwnProperty(key)) {
+            continue
+        }
+
+        if (BLACKLISTED_KEYS[key]) {
+            continue
+        }
+
+        var value = properties[key]
+        if (typeof value !== "string" &&
+            typeof value !== "number" &&
+            typeof value !== "boolean"
+        ) {
+            continue
+        }
+
+        properties[key] = attributeHook(value)
+    }
+
+    return h(tagName, properties, children)
+}
+
+function isChildren(x) {
+    return typeof x === "string" || Array.isArray(x)
+}
+
+},{"./hooks/attribute-hook.js":15,"./index.js":19}],39:[function(require,module,exports){
 var isArray = require("x-is-array")
 var isObject = require("is-object")
 
@@ -1158,7 +1865,7 @@ function appendPatch(apply, patch) {
     }
 }
 
-},{"./handle-thunk":15,"./is-thunk":16,"./is-vnode":18,"./is-vtext":19,"./is-widget":20,"./vpatch":22,"is-object":4,"x-is-array":56}],15:[function(require,module,exports){
+},{"./handle-thunk":40,"./is-thunk":41,"./is-vnode":43,"./is-vtext":44,"./is-widget":45,"./vpatch":48,"is-object":4,"x-is-array":50}],40:[function(require,module,exports){
 var isVNode = require("./is-vnode")
 var isVText = require("./is-vtext")
 var isWidget = require("./is-widget")
@@ -1200,50 +1907,21 @@ function renderThunk(thunk, previous) {
     return renderedThunk
 }
 
-},{"./is-thunk":16,"./is-vnode":18,"./is-vtext":19,"./is-widget":20}],16:[function(require,module,exports){
-module.exports = isThunk
-
-function isThunk(t) {
-    return t && t.type === "Thunk"
-}
-
-},{}],17:[function(require,module,exports){
-module.exports = isHook
-
-function isHook(hook) {
-    return hook && typeof hook.hook === "function" &&
-        !hook.hasOwnProperty("hook")
-}
-
-},{}],18:[function(require,module,exports){
-var version = require("./version")
-
-module.exports = isVirtualNode
-
-function isVirtualNode(x) {
-    return x && x.type === "VirtualNode" && x.version === version
-}
-
-},{"./version":21}],19:[function(require,module,exports){
-var version = require("./version")
-
-module.exports = isVirtualText
-
-function isVirtualText(x) {
-    return x && x.type === "VirtualText" && x.version === version
-}
-
-},{"./version":21}],20:[function(require,module,exports){
-module.exports = isWidget
-
-function isWidget(w) {
-    return w && w.type === "Widget"
-}
-
-},{}],21:[function(require,module,exports){
-module.exports = "1"
-
-},{}],22:[function(require,module,exports){
+},{"./is-thunk":41,"./is-vnode":43,"./is-vtext":44,"./is-widget":45}],41:[function(require,module,exports){
+arguments[4][29][0].apply(exports,arguments)
+},{"dup":29}],42:[function(require,module,exports){
+arguments[4][30][0].apply(exports,arguments)
+},{"dup":30}],43:[function(require,module,exports){
+arguments[4][31][0].apply(exports,arguments)
+},{"./version":46,"dup":31}],44:[function(require,module,exports){
+arguments[4][32][0].apply(exports,arguments)
+},{"./version":46,"dup":32}],45:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"dup":33}],46:[function(require,module,exports){
+arguments[4][34][0].apply(exports,arguments)
+},{"dup":34}],47:[function(require,module,exports){
+arguments[4][35][0].apply(exports,arguments)
+},{"./is-vhook":42,"./is-vnode":43,"./is-widget":45,"./version":46,"dup":35}],48:[function(require,module,exports){
 var version = require("./version")
 
 VirtualPatch.NONE = 0
@@ -1267,692 +1945,9 @@ function VirtualPatch(type, vNode, patch) {
 VirtualPatch.prototype.version = version
 VirtualPatch.prototype.type = "VirtualPatch"
 
-},{"./version":21}],23:[function(require,module,exports){
-var patch = require("vdom/patch")
-
-module.exports = patch
-
-},{"vdom/patch":12}],24:[function(require,module,exports){
-module.exports = AttributeHook;
-
-function AttributeHook(value) {
-    if (!(this instanceof AttributeHook)) {
-        return new AttributeHook(value);
-    }
-
-    this.value = value;
-}
-
-AttributeHook.prototype.hook = function (node, prop, prev) {
-    if (prev && prev.value === this.value) {
-        return;
-    }
-
-    node.setAttributeNS(null, prop, this.value)
-}
-
-},{}],25:[function(require,module,exports){
-var DataSet = require("data-set")
-
-module.exports = DataSetHook;
-
-function DataSetHook(value) {
-    if (!(this instanceof DataSetHook)) {
-        return new DataSetHook(value);
-    }
-
-    this.value = value;
-}
-
-DataSetHook.prototype.hook = function (node, propertyName) {
-    var ds = DataSet(node)
-    var propName = propertyName.substr(5)
-
-    ds[propName] = this.value;
-};
-
-},{"data-set":30}],26:[function(require,module,exports){
-var DataSet = require("data-set")
-
-module.exports = DataSetHook;
-
-function DataSetHook(value) {
-    if (!(this instanceof DataSetHook)) {
-        return new DataSetHook(value);
-    }
-
-    this.value = value;
-}
-
-DataSetHook.prototype.hook = function (node, propertyName) {
-    var ds = DataSet(node)
-    var propName = propertyName.substr(3)
-
-    ds[propName] = this.value;
-};
-
-},{"data-set":30}],27:[function(require,module,exports){
-module.exports = SoftSetHook;
-
-function SoftSetHook(value) {
-    if (!(this instanceof SoftSetHook)) {
-        return new SoftSetHook(value);
-    }
-
-    this.value = value;
-}
-
-SoftSetHook.prototype.hook = function (node, propertyName) {
-    if (node[propertyName] !== this.value) {
-        node[propertyName] = this.value;
-    }
-};
-
-},{}],28:[function(require,module,exports){
-var VNode = require("vtree/vnode.js")
-var VText = require("vtree/vtext.js")
-var isVNode = require("vtree/is-vnode")
-var isVText = require("vtree/is-vtext")
-var isWidget = require("vtree/is-widget")
-var isHook = require("vtree/is-vhook")
-var isVThunk = require("vtree/is-thunk")
-var TypedError = require("error/typed")
-
-var parseTag = require("./parse-tag.js")
-var softSetHook = require("./hooks/soft-set-hook.js")
-var dataSetHook = require("./hooks/data-set-hook.js")
-var evHook = require("./hooks/ev-hook.js")
-
-var UnexpectedVirtualElement = TypedError({
-    type: "virtual-hyperscript.unexpected.virtual-element",
-    message: "Unexpected virtual child passed to h().\n" +
-        "Expected a VNode / Vthunk / VWidget / string but:\n" +
-        "got a {foreignObjectStr}.\n" +
-        "The parent vnode is {parentVnodeStr}.\n" +
-        "Suggested fix: change your `h(..., [ ... ])` callsite.",
-    foreignObjectStr: null,
-    parentVnodeStr: null,
-    foreignObject: null,
-    parentVnode: null
-})
-
-module.exports = h
-
-function h(tagName, properties, children) {
-    var childNodes = []
-    var tag, props, key, namespace
-
-    if (!children && isChildren(properties)) {
-        children = properties
-        props = {}
-    }
-
-    props = props || properties || {}
-    tag = parseTag(tagName, props)
-
-    // support keys
-    if ("key" in props) {
-        key = props.key
-        props.key = undefined
-    }
-
-    // support namespace
-    if ("namespace" in props) {
-        namespace = props.namespace
-        props.namespace = undefined
-    }
-
-    // fix cursor bug
-    if (tag === "input" &&
-        "value" in props &&
-        props.value !== undefined &&
-        !isHook(props.value)
-    ) {
-        props.value = softSetHook(props.value)
-    }
-
-    var keys = Object.keys(props)
-    var propName, value
-    for (var j = 0; j < keys.length; j++) {
-        propName = keys[j]
-        value = props[propName]
-        if (isHook(value)) {
-            continue
-        }
-
-        // add data-foo support
-        if (propName.substr(0, 5) === "data-") {
-            props[propName] = dataSetHook(value)
-        }
-
-        // add ev-foo support
-        if (propName.substr(0, 3) === "ev-") {
-            props[propName] = evHook(value)
-        }
-    }
-
-    if (children !== undefined && children !== null) {
-        addChild(children, childNodes, tag, props)
-    }
-
-
-    var node = new VNode(tag, props, childNodes, key, namespace)
-
-    return node
-}
-
-function addChild(c, childNodes, tag, props) {
-    if (typeof c === "string") {
-        childNodes.push(new VText(c))
-    } else if (isChild(c)) {
-        childNodes.push(c)
-    } else if (Array.isArray(c)) {
-        for (var i = 0; i < c.length; i++) {
-            addChild(c[i], childNodes, tag, props)
-        }
-    } else if (c === null || c === undefined) {
-        return
-    } else {
-        throw UnexpectedVirtualElement({
-            foreignObjectStr: JSON.stringify(c),
-            foreignObject: c,
-            parentVnodeStr: JSON.stringify({
-                tagName: tag,
-                properties: props
-            }),
-            parentVnode: {
-                tagName: tag,
-                properties: props
-            }
-        })
-    }
-}
-
-function isChild(x) {
-    return isVNode(x) || isVText(x) || isWidget(x) || isVThunk(x)
-}
-
-function isChildren(x) {
-    return typeof x === "string" || Array.isArray(x) || isChild(x)
-}
-
-},{"./hooks/data-set-hook.js":25,"./hooks/ev-hook.js":26,"./hooks/soft-set-hook.js":27,"./parse-tag.js":46,"error/typed":37,"vtree/is-thunk":38,"vtree/is-vhook":39,"vtree/is-vnode":40,"vtree/is-vtext":41,"vtree/is-widget":42,"vtree/vnode.js":44,"vtree/vtext.js":45}],29:[function(require,module,exports){
-module.exports = createHash
-
-function createHash(elem) {
-    var attributes = elem.attributes
-    var hash = {}
-
-    if (attributes === null || attributes === undefined) {
-        return hash
-    }
-
-    for (var i = 0; i < attributes.length; i++) {
-        var attr = attributes[i]
-
-        if (attr.name.substr(0,5) !== "data-") {
-            continue
-        }
-
-        hash[attr.name.substr(5)] = attr.value
-    }
-
-    return hash
-}
-
-},{}],30:[function(require,module,exports){
-var createStore = require("weakmap-shim/create-store")
-var Individual = require("individual")
-
-var createHash = require("./create-hash.js")
-
-var hashStore = Individual("__DATA_SET_WEAKMAP@3", createStore())
-
-module.exports = DataSet
-
-function DataSet(elem) {
-    var store = hashStore(elem)
-
-    if (!store.hash) {
-        store.hash = createHash(elem)
-    }
-
-    return store.hash
-}
-
-},{"./create-hash.js":29,"individual":31,"weakmap-shim/create-store":32}],31:[function(require,module,exports){
-(function (global){
-var root = typeof window !== 'undefined' ?
-    window : typeof global !== 'undefined' ?
-    global : {};
-
-module.exports = Individual
-
-function Individual(key, value) {
-    if (root[key]) {
-        return root[key]
-    }
-
-    Object.defineProperty(root, key, {
-        value: value
-        , configurable: true
-    })
-
-    return value
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],32:[function(require,module,exports){
-var hiddenStore = require('./hidden-store.js');
-
-module.exports = createStore;
-
-function createStore() {
-    var key = {};
-
-    return function (obj) {
-        if (typeof obj !== 'object' || obj === null) {
-            throw new Error('Weakmap-shim: Key must be object')
-        }
-
-        var store = obj.valueOf(key);
-        return store && store.identity === key ?
-            store : hiddenStore(obj, key);
-    };
-}
-
-},{"./hidden-store.js":33}],33:[function(require,module,exports){
-module.exports = hiddenStore;
-
-function hiddenStore(obj, key) {
-    var store = { identity: key };
-    var valueOf = obj.valueOf;
-
-    Object.defineProperty(obj, "valueOf", {
-        value: function (value) {
-            return value !== key ?
-                valueOf.apply(this, arguments) : store;
-        },
-        writable: true
-    });
-
-    return store;
-}
-
-},{}],34:[function(require,module,exports){
-module.exports = function(obj) {
-    if (typeof obj === 'string') return camelCase(obj);
-    return walk(obj);
-};
-
-function walk (obj) {
-    if (!obj || typeof obj !== 'object') return obj;
-    if (isDate(obj) || isRegex(obj)) return obj;
-    if (isArray(obj)) return map(obj, walk);
-    return reduce(objectKeys(obj), function (acc, key) {
-        var camel = camelCase(key);
-        acc[camel] = walk(obj[key]);
-        return acc;
-    }, {});
-}
-
-function camelCase(str) {
-    return str.replace(/[_.-](\w|$)/g, function (_,x) {
-        return x.toUpperCase();
-    });
-}
-
-var isArray = Array.isArray || function (obj) {
-    return Object.prototype.toString.call(obj) === '[object Array]';
-};
-
-var isDate = function (obj) {
-    return Object.prototype.toString.call(obj) === '[object Date]';
-};
-
-var isRegex = function (obj) {
-    return Object.prototype.toString.call(obj) === '[object RegExp]';
-};
-
-var has = Object.prototype.hasOwnProperty;
-var objectKeys = Object.keys || function (obj) {
-    var keys = [];
-    for (var key in obj) {
-        if (has.call(obj, key)) keys.push(key);
-    }
-    return keys;
-};
-
-function map (xs, f) {
-    if (xs.map) return xs.map(f);
-    var res = [];
-    for (var i = 0; i < xs.length; i++) {
-        res.push(f(xs[i], i));
-    }
-    return res;
-}
-
-function reduce (xs, f, acc) {
-    if (xs.reduce) return xs.reduce(f, acc);
-    for (var i = 0; i < xs.length; i++) {
-        acc = f(acc, xs[i], i);
-    }
-    return acc;
-}
-
-},{}],35:[function(require,module,exports){
-var nargs = /\{([0-9a-zA-Z]+)\}/g
-var slice = Array.prototype.slice
-
-module.exports = template
-
-function template(string) {
-    var args
-
-    if (arguments.length === 2 && typeof arguments[1] === "object") {
-        args = arguments[1]
-    } else {
-        args = slice.call(arguments, 1)
-    }
-
-    if (!args || !args.hasOwnProperty) {
-        args = {}
-    }
-
-    return string.replace(nargs, function replaceArg(match, i, index) {
-        var result
-
-        if (string[index - 1] === "{" &&
-            string[index + match.length] === "}") {
-            return i
-        } else {
-            result = args.hasOwnProperty(i) ? args[i] : null
-            if (result === null || result === undefined) {
-                return ""
-            }
-
-            return result
-        }
-    })
-}
-
-},{}],36:[function(require,module,exports){
-module.exports = extend
-
-function extend(target) {
-    for (var i = 1; i < arguments.length; i++) {
-        var source = arguments[i]
-
-        for (var key in source) {
-            if (source.hasOwnProperty(key)) {
-                target[key] = source[key]
-            }
-        }
-    }
-
-    return target
-}
-
-},{}],37:[function(require,module,exports){
-var camelize = require("camelize")
-var template = require("string-template")
-var extend = require("xtend/mutable")
-
-module.exports = TypedError
-
-function TypedError(args) {
-    if (!args) {
-        throw new Error("args is required");
-    }
-    if (!args.type) {
-        throw new Error("args.type is required");
-    }
-    if (!args.message) {
-        throw new Error("args.message is required");
-    }
-
-    var message = args.message
-
-    if (args.type && !args.name) {
-        var errorName = camelize(args.type) + "Error"
-        args.name = errorName[0].toUpperCase() + errorName.substr(1)
-    }
-
-    createError.type = args.type;
-    createError._name = args.name;
-
-    return createError;
-
-    function createError(opts) {
-        var result = new Error()
-
-        Object.defineProperty(result, "type", {
-            value: result.type,
-            enumerable: true,
-            writable: true,
-            configurable: true
-        })
-
-        var options = extend({}, args, opts)
-
-        extend(result, options)
-        result.message = template(message, options)
-
-        return result
-    }
-}
-
-
-},{"camelize":34,"string-template":35,"xtend/mutable":36}],38:[function(require,module,exports){
-module.exports=require(16)
-},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-thunk.js":16}],39:[function(require,module,exports){
-module.exports=require(17)
-},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-vhook.js":17}],40:[function(require,module,exports){
-module.exports=require(18)
-},{"./version":43,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-vnode.js":18}],41:[function(require,module,exports){
-module.exports=require(19)
-},{"./version":43,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-vtext.js":19}],42:[function(require,module,exports){
-module.exports=require(20)
-},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-widget.js":20}],43:[function(require,module,exports){
-module.exports=require(21)
-},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/version.js":21}],44:[function(require,module,exports){
-var version = require("./version")
-var isVNode = require("./is-vnode")
-var isWidget = require("./is-widget")
-var isVHook = require("./is-vhook")
-
-module.exports = VirtualNode
-
-var noProperties = {}
-var noChildren = []
-
-function VirtualNode(tagName, properties, children, key, namespace) {
-    this.tagName = tagName
-    this.properties = properties || noProperties
-    this.children = children || noChildren
-    this.key = key != null ? String(key) : undefined
-    this.namespace = (typeof namespace === "string") ? namespace : null
-
-    var count = (children && children.length) || 0
-    var descendants = 0
-    var hasWidgets = false
-    var descendantHooks = false
-    var hooks
-
-    for (var propName in properties) {
-        if (properties.hasOwnProperty(propName)) {
-            var property = properties[propName]
-            if (isVHook(property)) {
-                if (!hooks) {
-                    hooks = {}
-                }
-
-                hooks[propName] = property
-            }
-        }
-    }
-
-    for (var i = 0; i < count; i++) {
-        var child = children[i]
-        if (isVNode(child)) {
-            descendants += child.count || 0
-
-            if (!hasWidgets && child.hasWidgets) {
-                hasWidgets = true
-            }
-
-            if (!descendantHooks && (child.hooks || child.descendantHooks)) {
-                descendantHooks = true
-            }
-        } else if (!hasWidgets && isWidget(child)) {
-            if (typeof child.destroy === "function") {
-                hasWidgets = true
-            }
-        }
-    }
-
-    this.count = count + descendants
-    this.hasWidgets = hasWidgets
-    this.hooks = hooks
-    this.descendantHooks = descendantHooks
-}
-
-VirtualNode.prototype.version = version
-VirtualNode.prototype.type = "VirtualNode"
-
-},{"./is-vhook":39,"./is-vnode":40,"./is-widget":42,"./version":43}],45:[function(require,module,exports){
-var version = require("./version")
-
-module.exports = VirtualText
-
-function VirtualText(text) {
-    this.text = String(text)
-}
-
-VirtualText.prototype.version = version
-VirtualText.prototype.type = "VirtualText"
-
-},{"./version":43}],46:[function(require,module,exports){
-var classIdSplit = /([\.#]?[a-zA-Z0-9_:-]+)/
-var notClassId = /^\.|#/
-
-module.exports = parseTag
-
-function parseTag(tag, props) {
-    if (!tag) {
-        return "div"
-    }
-
-    var noId = !("id" in props)
-
-    var tagParts = tag.split(classIdSplit)
-    var tagName = null
-
-    if (notClassId.test(tagParts[1])) {
-        tagName = "div"
-    }
-
-    var classes, part, type, i
-    for (i = 0; i < tagParts.length; i++) {
-        part = tagParts[i]
-
-        if (!part) {
-            continue
-        }
-
-        type = part.charAt(0)
-
-        if (!tagName) {
-            tagName = part
-        } else if (type === ".") {
-            classes = classes || []
-            classes.push(part.substring(1, part.length))
-        } else if (type === "#" && noId) {
-            props.id = part.substring(1, part.length)
-        }
-    }
-
-    if (classes) {
-        if (props.className) {
-            classes.push(props.className)
-        }
-
-        props.className = classes.join(" ")
-    }
-
-    return tagName ? tagName.toLowerCase() : "div"
-}
-
-},{}],47:[function(require,module,exports){
-var attributeHook = require("./hooks/attribute-hook.js")
-var h = require("./index.js")
-
-var BLACKLISTED_KEYS = {
-    "style": true,
-    "namespace": true,
-    "key": true
-}
-var SVG_NAMESPACE = "http://www.w3.org/2000/svg"
-
-module.exports = svg
-
-function svg(tagName, properties, children) {
-    if (!children && isChildren(properties)) {
-        children = properties
-        properties = {}
-    }
-
-    properties = properties || {}
-
-    // set namespace for svg
-    properties.namespace = SVG_NAMESPACE
-
-    // for each key, if attribute & string, bool or number then
-    // convert it into a setAttribute hook
-    for (var key in properties) {
-        if (!properties.hasOwnProperty(key)) {
-            continue
-        }
-
-        if (BLACKLISTED_KEYS[key]) {
-            continue
-        }
-
-        var value = properties[key]
-        if (typeof value !== "string" &&
-            typeof value !== "number" &&
-            typeof value !== "boolean"
-        ) {
-            continue
-        }
-
-        properties[key] = attributeHook(value)
-    }
-
-    return h(tagName, properties, children)
-}
-
-function isChildren(x) {
-    return typeof x === "string" || Array.isArray(x)
-}
-
-},{"./hooks/attribute-hook.js":24,"./index.js":28}],48:[function(require,module,exports){
-module.exports=require(17)
-},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-vhook.js":17}],49:[function(require,module,exports){
-module.exports=require(18)
-},{"./version":52,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-vnode.js":18}],50:[function(require,module,exports){
-module.exports=require(19)
-},{"./version":52,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-vtext.js":19}],51:[function(require,module,exports){
-module.exports=require(20)
-},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/is-widget.js":20}],52:[function(require,module,exports){
-module.exports=require(21)
-},{"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/version.js":21}],53:[function(require,module,exports){
-module.exports=require(44)
-},{"./is-vhook":48,"./is-vnode":49,"./is-widget":51,"./version":52,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-hyperscript/node_modules/vtree/vnode.js":44}],54:[function(require,module,exports){
-module.exports=require(22)
-},{"./version":52,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-dom/node_modules/vtree/vpatch.js":22}],55:[function(require,module,exports){
-module.exports=require(45)
-},{"./version":52,"/home/shashi/.julia/v0.3/Patchwork/runtime/node_modules/virtual-hyperscript/node_modules/vtree/vtext.js":45}],56:[function(require,module,exports){
+},{"./version":46}],49:[function(require,module,exports){
+arguments[4][36][0].apply(exports,arguments)
+},{"./version":46,"dup":36}],50:[function(require,module,exports){
 var nativeIsArray = Array.isArray
 var toString = Object.prototype.toString
 
@@ -1962,7 +1957,7 @@ function isArray(obj) {
     return toString.call(obj) === "[object Array]"
 }
 
-},{}],57:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 isObject = require('is-object')
 
 module.exports = {reorder: reorder,
@@ -1992,7 +1987,7 @@ function patchObject(obj, patch) {
 }
 
 
-},{"is-object":4}],58:[function(require,module,exports){
+},{"is-object":4}],52:[function(require,module,exports){
 var mutateNode = require("./vnode-patch-op")
 var isArray = require('x-is-array')
 
@@ -2028,7 +2023,7 @@ function linkParents(vNode) {
     }
 }
 
-},{"./vnode-patch-op":59,"x-is-array":56}],59:[function(require,module,exports){
+},{"./vnode-patch-op":53,"x-is-array":50}],53:[function(require,module,exports){
 var isWidget = require("vtree/is-widget")
 var isVText = require("vtree/is-vtext")
 var VPatch = require("vtree/vpatch")
@@ -2130,6 +2125,6 @@ function vNodePatch(node, patch) {
     return node
 }
 
-},{"./patch-util.js":57,"vtree/is-vtext":50,"vtree/is-widget":51,"vtree/vpatch":54}],60:[function(require,module,exports){
+},{"./patch-util.js":51,"vtree/is-vtext":44,"vtree/is-widget":45,"vtree/vpatch":48}],54:[function(require,module,exports){
 
 },{}]},{},[1]);
