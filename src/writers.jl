@@ -1,7 +1,7 @@
 import JSON: json
 
 js_runtime() =
-    readall(open(joinpath(Pkg.dir("Patchwork"), "runtime", "build.js")))
+    readall(open(joinpath(dirname(@__FILE__), "..", "runtime", "build.js")))
 
 load_js_runtime() =
     display(MIME("text/html"), "<script>$(
