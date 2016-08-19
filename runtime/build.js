@@ -55,7 +55,31 @@ var P = Patchwork = {
                 }
             }
         }
+        P.setupHooks(props);
         return props;
+    },
+    hooks: {},
+    register_hook: function (hook, f) {
+        P.hooks[hook] = f;
+    },
+    setupHooks: function (props) {
+        if (typeof props !== "object" || props == null) {
+            return props;
+        } else if (props && "_hook" in props) {
+            if (props._hook in P.hooks) {
+                v = P.hooks[props._hook](P.setupHooks(props.val));
+                console.log("Hook "+ props._hook+" applied. ", v)
+                return v
+            } else {
+                console.warn("Unknown hook " + props._hook + "use Patchwork.register_hook to set it up")
+                return undefined
+            }
+        } else {
+            for (var k in props) {
+                props[k] = P.setupHooks(props[k]);
+            }
+            return props;
+        }
     },
     makeVNode: function (jlNode) {
         if ('txt' in jlNode) return new VText(jlNode.txt);

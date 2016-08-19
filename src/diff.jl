@@ -116,7 +116,7 @@ function diff(a::Associative, b::Associative)
     for (k, v) in a
         if haskey(b, k)
             if !are_equal(v, b[k])
-                if isa(b[k], Associative)
+                if isa(b[k], Associative) || isa(b[k], PropHook)
                     dictdiff = diff(v, b[k])
                     if !is(dictdiff, nothing)
                         updates[k] = dictdiff
@@ -129,6 +129,8 @@ function diff(a::Associative, b::Associative)
             # deleted
             if isa(v, Associative)
                 updates[k] = diff(v, Dict())
+            elseif isa(v, PropHook)
+                updates[k] = diff(v, PropHook("", nothing))
             else
                 updates[k] = nothing
             end

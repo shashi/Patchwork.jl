@@ -167,6 +167,7 @@ include("diff.jl")
 include("parse.jl")
 
 include("jsonfmt.jl")
+include("hooks.jl")
 include("writers.jl")
 
 
