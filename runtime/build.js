@@ -55,8 +55,7 @@ var P = Patchwork = {
                 }
             }
         }
-        P.setupHooks(props);
-        return props;
+        return P.setupHooks(props);
     },
     hooks: {},
     register_hook: function (hook, f) {
@@ -68,7 +67,6 @@ var P = Patchwork = {
         } else if (props && "_hook" in props) {
             if (props._hook in P.hooks) {
                 v = P.hooks[props._hook](P.setupHooks(props.val));
-                console.log("Hook "+ props._hook+" applied. ", v)
                 return v
             } else {
                 console.warn("Unknown hook " + props._hook + "use Patchwork.register_hook to set it up")
@@ -2022,7 +2020,9 @@ function reorder(array, moves) {
 
 function patchObject(obj, patch) {
     for (var key in patch) {
-        if (isObject(patch[key]) && isObject(obj[key])) {
+        if (patch[key] && typeof patch[key].hook == "function") {
+            obj[key] = patch[key]
+        } else if (isObject(patch[key]) && isObject(obj[key])) {
             obj[key] = patchObject(obj[key], patch[key]);
         } else {
             obj[key] = patch[key]

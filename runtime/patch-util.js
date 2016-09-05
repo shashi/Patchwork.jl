@@ -18,7 +18,9 @@ function reorder(array, moves) {
 
 function patchObject(obj, patch) {
     for (var key in patch) {
-        if (isObject(patch[key]) && isObject(obj[key])) {
+        if (patch[key] && typeof patch[key].hook == "function") {
+            obj[key] = patch[key]
+        } else if (isObject(patch[key]) && isObject(obj[key])) {
             obj[key] = patchObject(obj[key], patch[key]);
         } else {
             obj[key] = patch[key]
