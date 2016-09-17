@@ -32,7 +32,7 @@ export Node,
        tohtml,
        writemime
 
-typealias MaybeKey @compat Union{(@compat Void), Symbol}
+typealias MaybeKey Union{Void, Symbol}
 
 # A Patchwork node
 abstract Node
@@ -147,7 +147,7 @@ function recmerge(a, b)
     c
 end
 
-attrs(; kwargs...) = @compat Dict(:attributes => Dict(kwargs))
+attrs(; kwargs...) = Dict(:attributes => Dict(kwargs))
 props(; kwargs...) = kwargs
 
 (&){ns, name}(a::Elem{ns, name}, itr) =

@@ -11,7 +11,7 @@ load_js_runtime() =
 
 pwid() = replace(string(gensym("pwid")), "#", "")
 
-writemime(io::IO, ::MIME"application/json", x::(@compat Union{Node, Patch})) =
+writemime(io::IO, ::MIME"application/json", x::Union{Node, Patch}) =
     write(io, json(jsonfmt(x)))
 
 function writemime(io::IO, ::MIME"text/html", x::Node)

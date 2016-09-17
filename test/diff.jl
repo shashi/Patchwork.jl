@@ -59,8 +59,8 @@ facts("Testing Diffs") do
     context("things that should return empty patches") do
         e1 = p("a")
         e2 = p("b")
-        a = @compat Dict(:x => 1)
-        b = @compat Dict(:x => @compat Dict(:y => 1))
+        a = Dict(:x => 1)
+        b = Dict(:x => Dict(:y => 1))
         @fact diff(e1, e1) --> isempty
         @fact diff(p(e1), p(e1)) --> isempty
         @fact diff(e1, p("a")) --> isempty
@@ -73,7 +73,7 @@ facts("Testing Diffs") do
     context("testing Overwrite") do
         e1 = p("a")
         e2 = p("b")
-        a = @compat Dict(1=>[Overwrite(Text("b"))])
+        a = Dict(1=>[Overwrite(Text("b"))])
         @fact Text("a") --> Text("a")
         @fact diff(e1, e2) --> sameas(a)
         @fact diff(e1, e2) --> sameas(a)
