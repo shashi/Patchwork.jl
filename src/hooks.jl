@@ -1,7 +1,7 @@
 export PropHook
 
 immutable PropHook
-    _hook::UTF8String
+    _hook::AbstractString
     val
 end
 

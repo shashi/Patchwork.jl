@@ -16,7 +16,7 @@ function make_tag(str)
             error("Invalid closing tag, $str")
         end
         tag = ms.captures[1]
-        return Elem(:closing_tag, symbol(tag)) # Hack alert!
+        return Elem(:closing_tag, Symbol(tag)) # Hack alert!
     else
         # this is an opening tag
         ms = match(r"^([a-zA-Z\-_0-9]+)\s*(.*)>", str)
@@ -29,9 +29,9 @@ function make_tag(str)
             attr_ms = matchall(r"([^\s=]*\s*=\s*[^\s=]*)", attrs)
             attr = Any[split(s, "=") for s in attr_ms]
             kvs = Any[(k, strip(v, Set("\"' "))) for (k, v) in attr]
-            return Elem(symbol(tag)) & kvs
+            return Elem(Symbol(tag)) & kvs
         else
-            return Elem(symbol(tag))
+            return Elem(Symbol(tag))
         end
     end
 end
@@ -72,12 +72,12 @@ function parse_elems(str::AbstractString, ns=:xhtml)
             if j==0
                 substr = str[i:end]
                 el = pop!(node_stack)
-                push!(node_stack, el << Text(str[i:end]))
+                push!(node_stack, el << TextNode(str[i:end]))
                 break
             else
                 el = pop!(node_stack)
                 j = prevind(str, j)
-                push!(node_stack, el << Text(str[i:j]))
+                push!(node_stack, el << TextNode(str[i:j]))
             end
         end
         i = j

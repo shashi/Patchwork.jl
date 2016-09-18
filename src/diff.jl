@@ -73,15 +73,15 @@ function diff!(a::AbstractVector, b::AbstractVector, index, patches; parentpatch
     end
 end
 
-diff!(a::Text, b::Text, index, patches) =
+diff!(a::TextNode, b::TextNode, index, patches) =
     a === b || a.text == b.text ?
         nothing :
         patches[index] = Patch[Overwrite(b)]
 
-diff!(a::Elem, b::Text, index, patches) =
+diff!(a::Elem, b::TextNode, index, patches) =
     patches[index] = Patch[Overwrite(b)]
 
-diff!(a::Text, b::Elem, index, patches) =
+diff!(a::TextNode, b::Elem, index, patches) =
     patches[index] = Patch[Overwrite(b)]
 
 # If element's tag or ns is changed

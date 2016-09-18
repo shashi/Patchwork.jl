@@ -3,8 +3,6 @@ import IJulia.metadata
 import JSON: json
 using Patchwork
 
-import Base: writemime
-
 if Pkg.installed("Reactive") !=nothing && Pkg.installed("Reactive") >= v"0.1.9"
     import Reactive: Signal, value, preserve
 
@@ -26,7 +24,7 @@ if Pkg.installed("Reactive") !=nothing && Pkg.installed("Reactive") >= v"0.1.9"
 
     metadata{ns, name}(x::Signal{Elem{ns, name}}) = Dict()
 
-    function writemime{ns, name}(io::IO, ::MIME"text/html", x::Signal{Elem{ns, name}})
+    @compat function Base.show{ns, name}(io::IO, ::MIME"text/html", x::Signal{Elem{ns, name}})
         id = Patchwork.pwid()
 
         write(io, """<div id="$id">""",

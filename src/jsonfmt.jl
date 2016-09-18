@@ -1,6 +1,7 @@
 # Concise JSON representations
 
-jsonfmt(x::Text) = Dict(:txt => x.text)
+jsonfmt(x::TextNode) = Dict(:txt => x.text)
+
 function jsonfmt{ns, tag}(x::Elem{ns, tag})
     dict = Dict{Any, Any}('t' => tag)
     if ns !== :xhtml
@@ -28,7 +29,7 @@ const VPATCH_REMOVE = 7
 # const VPATCH_THUNK = 8
 
 jsonfmt{T <: Elem}(p::Overwrite{T}) = Dict(VPATCH_VNODE =>jsonfmt(p.b))
-jsonfmt(p::Overwrite{Text}) = Dict(VPATCH_VTEXT => p.b.text)
+jsonfmt(p::Overwrite{TextNode}) = Dict(VPATCH_VTEXT => p.b.text)
 jsonfmt(p::DictDiff)        = Dict(VPATCH_PROPS => p.updates)
 jsonfmt(p::Reorder)         = Dict(VPATCH_ORDER => p.moves)
 jsonfmt(p::Insert)          = Dict(VPATCH_INSERT => jsonfmt(p.b))
@@ -39,4 +40,10 @@ jsonfmt(ps::AbstractArray{Patch}) =
         jsonfmt(ps[1]) :
         [jsonfmt(p) for p in ps]
 
-jsonfmt(ps::Dict) = [k => jsonfmt(p) for (k, p) in ps]
+function jsonfmt(ps::Dict)
+    d=Dict()
+    for (k,p) in ps
+        d[k]=jsonfmt(p)
+    end
+    d
+end

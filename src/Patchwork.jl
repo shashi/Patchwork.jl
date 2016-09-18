@@ -10,7 +10,7 @@ import Base:
        ==,
        >>,
        &,
-       writemime,
+       show,
        <<
 
 export Node,
@@ -21,7 +21,7 @@ export Node,
        hasproperties,
        withchild,
        withlastchild,
-       Text,
+       TextNode,
        text,
        NodeVector,
        Props,
@@ -29,19 +29,18 @@ export Node,
        attrs,
        EmptyNode,
        MaybeKey,
-       tohtml,
-       writemime
+       tohtml
 
 typealias MaybeKey @compat Union{(@compat Void), Symbol}
 
 # A Patchwork node
 abstract Node
 
-immutable Text <: Node
-    text::ByteString
+immutable TextNode <: Node
+    text::AbstractString
 end
 text(xs...) =
-    Text(string(xs...))
+    TextNode(string(xs...))
 
 convert(::Type{Node}, s::AbstractString) = text(s)
 promote_rule(::Type{Node}, ::Type{AbstractString}) = Node
@@ -91,14 +90,20 @@ haschildren(el::Elem) = !isempty(el.children)
 properties(el::Elem) = isdefined(el, :properties) ? el.properties : Props()
 children(el::Elem) = el.children
 
-_count(t::Text) = 1
+_count(t::TextNode) = 1
 _count(el::Elem) = el.count + 1
-count(t::Text) = 0
+count(t::TextNode) = 0
 count(el::Elem) = el.count
-count(v::NodeVector) = Int[_count(x) for x in v] |> sum
+function count(v::NodeVector)
+    s = 0
+    for x in v
+        s +=_count(x)
+    end
+    s
+end
 
 key(n::Elem) = hasproperties(n) ? get(n.properties, :key, nothing) : nothing
-key(n::Text) = nothing
+key(n::TextNode) = nothing
 
 # A document type
 immutable DocVariant{ns}
@@ -106,10 +111,9 @@ immutable DocVariant{ns}
 end
 
 # constructors
-Elem(ns::Symbol, name::Symbol) = Elem{ns, name}()
 
 Elem(ns, name, props, children) =
-    Elem{symbol(ns) , symbol(name)}(props, children)
+    Elem{Symbol(ns) , Symbol(name)}(props, children)
 
 Elem(ns::Symbol, name::Symbol, children=EmptyNode; kwargs...) =
     Elem(ns, name, kwargs, children)
@@ -122,7 +126,7 @@ isequal{ns,name}(a::Elem{ns,name}, b::Elem{ns,name}) =
                 isequal(children(a), children(b)))
 isequal(a::Elem, b::Elem) = false
 
-==(a::Text, b::Text) = a.text == b.text
+==(a::TextNode, b::TextNode) = a.text == b.text
 =={ns, name}(a::Elem{ns, name}, b::Elem{ns,name}) =
     a === b || (a.properties == b.properties &&
                 a.children == b.children)
@@ -187,7 +191,7 @@ function showindent(io, level)
     end
 end
 
-function Base.show(io::IO, el::Text, indent_level=0)
+@compat function Base.show(io::IO, el::TextNode, indent_level=0)
     showindent(io, indent_level)
     show(io, el.text)
 end
@@ -203,7 +207,7 @@ function showprops(io, dict)
     write(io, "}")
 end
 
-function Base.show{ns, tag}(io::IO, el::Elem{ns, tag}, indent_level=0)
+@compat function Base.show{ns, tag}(io::IO, el::Elem{ns, tag}, indent_level=0)
     showindent(io, indent_level)
     write(io, "(")
     if namespace(el) != :xhtml

@@ -6,7 +6,7 @@ using Base.Test
 
 import Patchwork:
            Patch,
-           Text,
+           TextNode,
            Elem,
            Overwrite,
            Insert,
@@ -73,8 +73,8 @@ facts("Testing Diffs") do
     context("testing Overwrite") do
         e1 = p("a")
         e2 = p("b")
-        a = @compat Dict(1=>[Overwrite(Text("b"))])
-        @fact Text("a") --> Text("a")
+        a = @compat Dict(1=>[Overwrite(TextNode("b"))])
+        @fact TextNode("a") --> TextNode("a")
         @fact diff(e1, e2) --> sameas(a)
         @fact diff(e1, e2) --> sameas(a)
     end
