@@ -2,9 +2,6 @@
 
 export parse_elems
 
-namespace{ns}(el::Elem{ns}) = ns
-tag{ns, tag}(el::Elem{ns, tag}) = tag
-
 function make_tag(str)
     # This function will get strings such as /tag>
     # or tag attr="val"...>

@@ -84,13 +84,13 @@ diff!(a::Elem, b::TextNode, index, patches) =
 diff!(a::TextNode, b::Elem, index, patches) =
     patches[index] = Patch[Overwrite(b)]
 
-# If element's tag or ns is changed
-diff!(a::Elem, b::Elem, index, patches) =
-    patches[index] = Patch[Overwrite(b)]
-
-function diff!{ns, tag}(a::Elem{ns, tag}, b::Elem{ns, tag}, index, patches)
+function diff!(a::Elem, b::Elem, index, patches)
     if a === b return patches end
 
+    if tag(a) != tag(b) || namespace(a) != namespace(b)
+        patches[index] = Patch[Overwrite(b)]
+        return
+    end
     patch = get(patches, index, Patch[])
 
     proppatch = diff(properties(a), properties(b))
