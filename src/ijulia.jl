@@ -2,6 +2,7 @@ using IJulia.CommManager
 import IJulia.metadata
 import JSON: json
 using Patchwork
+using Compat
 
 if Pkg.installed("Reactive") !=nothing && Pkg.installed("Reactive") >= v"0.1.9"
     import Reactive: Signal, value, preserve
