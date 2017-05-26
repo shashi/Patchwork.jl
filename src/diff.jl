@@ -2,7 +2,7 @@ export diff
 
 import Base.diff
 
-abstract Patch
+@compat abstract type Patch end
 
 immutable Insert <: Patch b end
 immutable Overwrite{T <: Node} <: Patch b::T end
@@ -94,7 +94,7 @@ function diff!{ns, tag}(a::Elem{ns, tag}, b::Elem{ns, tag}, index, patches)
     patch = get(patches, index, Patch[])
 
     proppatch = diff(properties(a), properties(b))
-    if !is(proppatch, nothing)
+    if proppatch !== nothing
         patch = push!(patch, DictDiff(proppatch))
     end
 
