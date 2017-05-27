@@ -1,22 +1,22 @@
 using Patchwork
-using FactCheck
+using Base.Test
 
 import Patchwork: count, TextNode, Elem
 
 ul(x...) = Elem(:xhtml, :ul, x)
 li(x...) = Elem(:xhtml, :li, x)
 
-facts("Testing Nodes") do
-    context("testing counts") do
-        @fact count(TextNode("a")) --> 0
-        @fact count(ul()) --> 0
-        @fact count(li("x")) --> 1
-        @fact count(ul(li("x"))) --> 2
-        @fact count(ul(li("x"), li("x"))) --> 4
+@testset "Testing Nodes" begin
+    @testset "testing counts" begin
+        @test count(TextNode("a")) == 0
+        @test count(ul()) == 0
+        @test count(li("x")) == 1
+        @test count(ul(li("x"))) == 2
+        @test count(ul(li("x"), li("x"))) == 4
     end
 end
 
-facts("Testing nested node creation") do
+@testset "Testing nested node creation" begin
   node = Elem(:div, TextNode("a"))
-  @fact count(node) --> 1
+  @test count(node) == 1
 end

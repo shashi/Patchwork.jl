@@ -1,7 +1,5 @@
 using Patchwork
-using FactCheck
 using Compat
-#using Match
 using Base.Test
 
 import Patchwork:
@@ -37,45 +35,43 @@ function sameas(l::Associative, r::Associative)
     end
     true
 end
-sameas(x) = (y) -> sameas(x, y)
 
-facts("Testing Diffs") do
-    context("testing are_equal") do
+@testset "Testing Diffs" begin
+    @testset "testing are_equal" begin
 
-        @fact are_equal(1, 1) --> true
-        @fact are_equal(1, 2) --> false
-        @fact are_equal(1, 1.0) --> true
-        @fact are_equal(1, 1.5) --> false
-        @fact are_equal(:x, "x") --> true
-        @fact are_equal("x", :x) --> true
-        @fact are_equal(:x, :x) --> true
-        @fact are_equal(:x, :y) --> false
+        @test are_equal(1, 1) == true
+        @test are_equal(1, 2) == false
+        @test are_equal(1, 1.0) == true
+        @test are_equal(1, 1.5) == false
+        @test are_equal(:x, "x") == true
+        @test are_equal("x", :x) == true
+        @test are_equal(:x, :x) == true
+        @test are_equal(:x, :y) == false
         a = [:x, :y]
         b = [:x, :y]
-        @fact are_equal(a, a) --> true
-        @fact are_equal(a, b) --> true
+        @test are_equal(a, a) == true
+        @test are_equal(a, b) == true
     end
 
-    context("things that should return empty patches") do
+    @testset "things that should return empty patches" begin
         e1 = p("a")
         e2 = p("b")
         a = @compat Dict(:x => 1)
         b = @compat Dict(:x => @compat Dict(:y => 1))
-        @fact diff(e1, e1) --> isempty
-        @fact diff(p(e1), p(e1)) --> isempty
-        @fact diff(e1, p("a")) --> isempty
-        @fact diff(p(e1, e2), p(e1, e2)) --> isempty
-        @fact diff(p(p("a"), e2), p(e1, p("b"))) --> isempty
-        @fact diff(e1 & a, p("a") & a) --> isempty
-        @fact diff(e1 & b, p("a") & b) --> isempty
+        @test isempty(diff(e1, e1))
+        @test isempty(diff(p(e1), p(e1)))
+        @test isempty(diff(e1, p("a")))
+        @test isempty(diff(p(e1, e2), p(e1, e2)))
+        @test isempty(diff(p(p("a"), e2), p(e1, p("b"))))
+        @test isempty(diff(e1 & a, p("a") & a))
+        @test isempty(diff(e1 & b, p("a") & b))
     end
 
-    context("testing Overwrite") do
+    @testset "testing Overwrite" begin
         e1 = p("a")
         e2 = p("b")
         a = @compat Dict(1=>[Overwrite(TextNode("b"))])
-        @fact TextNode("a") --> TextNode("a")
-        @fact diff(e1, e2) --> sameas(a)
-        @fact diff(e1, e2) --> sameas(a)
+        @test TextNode("a") == TextNode("a")
+        @test sameas(diff(e1, e2), a)
     end
 end
