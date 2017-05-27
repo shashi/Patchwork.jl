@@ -31,10 +31,10 @@ export Node,
        MaybeKey,
        tohtml
 
-typealias MaybeKey @compat Union{(@compat Void), Symbol}
+const MaybeKey = @compat Union{(@compat Void), Symbol}
 
 # A Patchwork node
-abstract Node
+@compat abstract type Node end
 
 immutable TextNode <: Node
     text::AbstractString
@@ -46,8 +46,8 @@ convert(::Type{Node}, s::AbstractString) = text(s)
 promote_rule(::Type{Node}, ::Type{AbstractString}) = Node
 
 # Abstract out the word "Persistent"
-typealias NodeVector   PersistentVector{Node}
-typealias Props Dict{Any, Any}
+const NodeVector = PersistentVector{Node}
+const Props = Dict{Any, Any}
 
 const EmptyNode = NodeVector([])
 
@@ -70,20 +70,18 @@ immutable Elem{ns, tag} <: Node
     count::Int
     children::NodeVector
     properties::Props
+end
 
-    function Elem(properties, children)
-        childvec = convert(NodeVector, children)
-        if isempty(properties)
-            new(count(childvec), childvec)
-        else
-            new(count(childvec), childvec, properties)
-        end
-    end
-
-    function Elem()
-        n = new(0, EmptyNode)
+function (::Type{Elem{ns, tag}}){ns, tag}(properties, children)
+    childvec = convert(NodeVector, children)
+    if isempty(properties)
+        Elem{ns,tag}(count(childvec), childvec, Props())
+    else
+        Elem{ns,tag}(count(childvec), childvec, properties)
     end
 end
+
+(::Type{Elem{ns, tag}}){ns, tag}() = Elem{ns,tag}(0, EmptyNode)
 
 hasproperties(el::Elem) = isdefined(el, :properties)
 haschildren(el::Elem) = !isempty(el.children)
